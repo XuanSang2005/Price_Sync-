@@ -5,6 +5,8 @@ import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,6 +47,13 @@ public class PriceRecord {
     @Column(name = "change_type", nullable = false)
     private String changeType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "validation_status")
+    private RecordStatus validationStatus = RecordStatus.PENDING;
+
+    @Column(name = "set_aside_reason")
+    private String setAsideReason;
+
     protected PriceRecord() {
     }
 
@@ -62,7 +71,37 @@ public class PriceRecord {
         this.changeType = changeType;
     }
 
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public LocalDate getEffectiveStart() {
+        return effectiveStart;
+    }
+
+    public LocalDate getEffectiveEnd() {
+        return effectiveEnd;
+    }
+
+    public String getChangeType() {
+        return changeType;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public void markValid(){
+        this.validationStatus = RecordStatus.VALID;
+    }
+
+    public void setAside(String reason){
+        this.validationStatus = RecordStatus.SET_ASIDE;
+        this.setAsideReason = reason;
+
     }
 }
