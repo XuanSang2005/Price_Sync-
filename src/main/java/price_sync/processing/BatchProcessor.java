@@ -1,11 +1,15 @@
 package price_sync.processing;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +26,17 @@ public class BatchProcessor {
     private final PriceBatchRepository priceBatchRepository;
     private final Validator validator;
     private final Mapper mapper;
+    private final PayloadBuilder payloadBuilder;
+    private final OutputWriter outputWriter;
 
     public BatchProcessor(PriceRecordRepository priceRecordRepository, Validator validator,
-            PriceBatchRepository priceBatchRepository, Mapper mapper) {
+            PriceBatchRepository priceBatchRepository, Mapper mapper, PayloadBuilder payloadBuilder, OutputWriter outputWriter) {
         this.priceRecordRepository = priceRecordRepository;
         this.validator = validator;
         this.priceBatchRepository = priceBatchRepository;
         this.mapper = mapper;
+        this.payloadBuilder = payloadBuilder;
+        this.outputWriter = outputWriter;
     }
 
     @Transactional
@@ -43,7 +51,7 @@ public class BatchProcessor {
     }
 
     @Transactional
-    public boolean validateBatch(Long batchId) {
+    public boolean validateBatch(@NonNull Long batchId) {
         int valid = 0, setAside = 0;
         List<PriceRecord> records = priceRecordRepository.findByBatchId(batchId);
         for (PriceRecord record : records) {
@@ -70,14 +78,19 @@ public class BatchProcessor {
     }
 
     @Transactional
-    public void mapBatch(Long batchId){
+    public void mapBatch(@NonNull Long batchId) throws IOException {
         PriceBatch batch = priceBatchRepository.findById(batchId).get();
         LocalDate businessDate = batch.getGeneratedAt().toLocalDate();
-        List<PriceRecord>records = priceRecordRepository.findByBatchIdAndValidationStatus(batchId, RecordStatus.VALID);
-        for (PriceRecord record : records){
+        List<MntRow> rows = new ArrayList<>();
+        List<PriceRecord> records = priceRecordRepository.findByBatchIdAndValidationStatus(batchId, RecordStatus.VALID);
+        for (PriceRecord record : records) {
             MntRow row = mapper.map(record, businessDate);
-            log.info("{}", row);
+            rows.add(row);
         }
+        Path tempFile = payloadBuilder.build(rows, businessDate);
+        Path finalFile = outputWriter.write(tempFile, batch);
+        log.info("Da ghi file MNT: {}", finalFile);
+        batch.markWritten();
     }
 
 }

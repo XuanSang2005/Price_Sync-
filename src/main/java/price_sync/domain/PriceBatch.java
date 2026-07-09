@@ -85,4 +85,7 @@ public class PriceBatch {
     public void markFail(){
         status = BatchStatus.FAILED;
     }
+    public void markWritten(){
+        status = BatchStatus.WRITTEN;
+    }
 }

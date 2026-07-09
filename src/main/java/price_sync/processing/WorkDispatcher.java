@@ -1,5 +1,6 @@
 package price_sync.processing;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,8 +26,9 @@ public class WorkDispatcher {
         this.batchProcessor = batchProcessor;
     }
 
+    @SuppressWarnings("null")
     @Scheduled(fixedDelay = 10_000)
-    public void poll() {
+    public void poll(){
         log.info("Dispatcher thuc day, dang tim viec");
         Optional<PriceBatch> optionalBatch = batchProcessor.claimNext(instanceId);
         if (optionalBatch.isEmpty()) {
@@ -36,8 +38,13 @@ public class WorkDispatcher {
 
         PriceBatch batch = optionalBatch.get();
         log.info("Da nhan batch id={}, batch_id={}, owner={}", batch.getId(), batch.getBatchId(), instanceId);
-        batchProcessor.validateBatch(batch.getId());
-        batchProcessor.mapBatch(batch.getId());
+        if (batchProcessor.validateBatch(batch.getId())){
+            try {
+                batchProcessor.mapBatch(batch.getId());
+            } catch (IOException e) {
+                log.error("Loi ghi file MNT cho batch {}", batch.getId(), e);
+            }
+        }
     }
 
     @Scheduled(fixedDelay = 60_000)
