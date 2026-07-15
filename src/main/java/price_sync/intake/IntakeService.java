@@ -7,6 +7,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import price_sync.domain.BatchLog;
+import price_sync.domain.BatchLogRepository;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
 import price_sync.domain.PriceRecord;
@@ -16,10 +18,13 @@ import price_sync.domain.PriceRecordRepository;
 public class IntakeService {
     private final PriceRecordRepository priceRecordRepository;
     private final PriceBatchRepository batchRepository;
+    private final BatchLogRepository batchLogRepository;
 
-    public IntakeService(PriceBatchRepository batchRepository, PriceRecordRepository priceRecordRepository) {
+    public IntakeService(PriceBatchRepository batchRepository, PriceRecordRepository priceRecordRepository,
+            BatchLogRepository batchLogRepository) {
         this.batchRepository = batchRepository;
         this.priceRecordRepository = priceRecordRepository;
+        this.batchLogRepository = batchLogRepository;
     }
 
     @Transactional
@@ -39,6 +44,7 @@ public class IntakeService {
                     record.effectiveEnd(), record.changeType()));
         }
         priceRecordRepository.saveAll(records);
+        batchLogRepository.save(new BatchLog(saved.getId(), saved.getStatus(),batch.records().size() + " records"));
         return saved;
     }
 }

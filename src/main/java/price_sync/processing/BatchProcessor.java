@@ -15,6 +15,8 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import price_sync.domain.BatchLog;
+import price_sync.domain.BatchLogRepository;
 import price_sync.domain.BatchStatus;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
@@ -32,16 +34,18 @@ public class BatchProcessor {
     private final Mapper mapper;
     private final PayloadBuilder payloadBuilder;
     private final OutputWriter outputWriter;
+    private final BatchLogRepository batchLogRepository;
 
     public BatchProcessor(PriceRecordRepository priceRecordRepository, Validator validator,
             PriceBatchRepository priceBatchRepository, Mapper mapper, PayloadBuilder payloadBuilder,
-            OutputWriter outputWriter) {
+            OutputWriter outputWriter, BatchLogRepository batchLogRepository) {
         this.priceRecordRepository = priceRecordRepository;
         this.validator = validator;
         this.priceBatchRepository = priceBatchRepository;
         this.mapper = mapper;
         this.payloadBuilder = payloadBuilder;
         this.outputWriter = outputWriter;
+        this.batchLogRepository = batchLogRepository;
     }
 
     @Transactional
@@ -52,6 +56,8 @@ public class BatchProcessor {
         }
         PriceBatch batch = next.get();
         batch.markProcessing(owner);
+        recordLog(batch.getId(), batch.getStatus(), owner);
+
         return next;
     }
 
@@ -63,12 +69,15 @@ public class BatchProcessor {
         }
         PriceBatch batch = next.get();
         batch.markProcessing(owner);
+        recordLog(batch.getId(), batch.getStatus(), "retry claim");
         return next;
     }
 
     @Transactional
     public boolean validateBatch(@NonNull Long batchId) {
         int valid = 0, setAside = 0;
+        PriceBatch batch = priceBatchRepository.findById(batchId).get();
+
         List<PriceRecord> records = priceRecordRepository.findByBatchId(batchId);
         for (PriceRecord record : records) {
             Optional<String> reason = validator.validate(record);
@@ -82,9 +91,10 @@ public class BatchProcessor {
         }
         double failRate = (double) setAside / (valid + setAside);
         if (failRate > 0.2 || valid == 0) {
-            priceBatchRepository.findById(batchId).get().markFail();
+            batch.markFail();
             log.warn("Batch {} BI HUY: {}/{} records set aside (ti le hong {}%)",
                     batchId, setAside, records.size(), Math.round(failRate * 100));
+            recordLog(batch.getId(), batch.getStatus(), setAside + "/" + records.size() + " set aside");
             return false;
         } else {
             log.info("Batch {} qua kiem dinh: {} VALID, {} SET_ASIDE - san sang cho Mapper",
@@ -101,12 +111,12 @@ public class BatchProcessor {
         List<PriceRecord> records = priceRecordRepository.findByBatchIdAndValidationStatus(batchId, RecordStatus.VALID);
         boolean hasSetAside = false;
         Map<String, Integer> maxVersion = new HashMap<>();
-        for (PriceRecord record : records){
+        for (PriceRecord record : records) {
             maxVersion.merge(record.getChangeId(), record.getVersion(), Math::max);
         }
 
         for (PriceRecord record : records) {
-            if (record.getVersion() < maxVersion.get(record.getChangeId())){
+            if (record.getVersion() < maxVersion.get(record.getChangeId())) {
                 record.markSupersede();
                 continue;
             }
@@ -122,12 +132,12 @@ public class BatchProcessor {
         Path tempFile = payloadBuilder.build(rows, businessDate);
         Path finalFile = outputWriter.write(tempFile, batch);
         log.info("Da ghi file MNT: {}", finalFile);
-        if (hasSetAside){
+        if (hasSetAside) {
             batch.markPartial();
-        }
-        else{
+        } else {
             batch.markWritten();
         }
+        recordLog(batch.getId(), batch.getStatus(), null);
 
     }
 
@@ -135,6 +145,7 @@ public class BatchProcessor {
     public void markPendingWrite(@NonNull Long bachtId) {
         PriceBatch batch = priceBatchRepository.findById(bachtId).get();
         batch.markPendingWrite();
+        recordLog(batch.getId(), batch.getStatus(), "write fail, retry " + batch.getRetryCount());
         if (batch.getStatus() == BatchStatus.FAILED) {
             log.error("CHUONG: Batch {} FAILED sau {} lan ghi that bai - can nguoi xu ly", bachtId,
                     batch.getRetryCount());
@@ -146,9 +157,14 @@ public class BatchProcessor {
         PriceBatch batch = priceBatchRepository.findById(bacthId).orElseThrow(InValidIdException::new);
         if (batch.getStatus() == BatchStatus.FAILED) {
             batch.redrive();
+            recordLog(batch.getId(), batch.getStatus(), "operator re-drive");
             return true;
         }
         return false;
+    }
+
+    private void recordLog(Long batchId, BatchStatus status, String note) {
+        batchLogRepository.save(new BatchLog(batchId, status, note));
     }
 
 }

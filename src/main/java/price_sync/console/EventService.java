@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import price_sync.domain.BatchLogRepository;
 import price_sync.domain.BatchStatus;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
@@ -14,13 +15,14 @@ import price_sync.intake.InValidIdException;
 
 @Service
 public class EventService {
+    private final BatchLogRepository batchLogRepository;
     private final PriceBatchRepository priceBatchRepository;
     private final PriceRecordRepository priceRecordRepository;
 
-    public EventService(PriceBatchRepository priceBatchRepository, PriceRecordRepository priceRecordRepository) {
+    public EventService(PriceBatchRepository priceBatchRepository, PriceRecordRepository priceRecordRepository, BatchLogRepository batchLogRepository) {
         this.priceBatchRepository = priceBatchRepository;
         this.priceRecordRepository = priceRecordRepository;
-
+        this.batchLogRepository = batchLogRepository;
     }
 
     public List<EventSummary> getEvents() {
@@ -53,5 +55,12 @@ public class EventService {
             statusCount.putIfAbsent(status, 0L);
         }
         return statusCount;
+    }
+
+    public List<EventLog> getLogs(Long batchId){
+        priceBatchRepository.findById(batchId).orElseThrow(InValidIdException::new);
+        return batchLogRepository.findByBatchIdOrderByCreatedAtAsc(batchId).stream()
+                .map(l -> new EventLog(l.getStatus(), l.getNote(), l.getCreatedAt()))
+                .toList();
     }
 }

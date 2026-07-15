@@ -10,19 +10,16 @@ import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-
-
-
 @RestController
 public class EventController {
-    private final EventService eventService; 
+    private final EventService eventService;
 
-    public EventController(EventService eventService){
+    public EventController(EventService eventService) {
         this.eventService = eventService;
     }
-    
+
     @GetMapping("/api/v1/events")
-    public List<EventSummary> getEvents(){
+    public List<EventSummary> getEvents() {
         return eventService.getEvents();
     }
 
@@ -30,11 +27,15 @@ public class EventController {
     public EventDetail getEventDetails(@PathVariable Long id) {
         return eventService.getEventDetails(id);
     }
-    
+
     @GetMapping("/api/v1/events/metrics")
     public Map<BatchStatus, Long> getMetrics() {
         return eventService.getMetrics();
     }
-    
-    
+
+    @GetMapping("/api/v1/events/{id}/logs")
+    public List<EventLog> getLogs(@PathVariable Long id) {
+        return eventService.getLogs(id);
+    }
+
 }
