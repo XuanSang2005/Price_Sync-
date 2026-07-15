@@ -11,7 +11,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import io.micrometer.common.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +25,8 @@ public class HmacFIlter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@org.springframework.lang.NonNull HttpServletRequest request,  @org.springframework.lang.NonNull HttpServletResponse response,
+            @org.springframework.lang.NonNull FilterChain filterChain) throws ServletException, IOException {
         CachedBodyHttpServletRequest cached = new CachedBodyHttpServletRequest(request);
         String ts = request.getHeader("X-Timestamp");
         byte[] body = cached.getBody();
@@ -52,6 +51,11 @@ public class HmacFIlter extends OncePerRequestFilter {
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@org.springframework.lang.NonNull HttpServletRequest request) {
+        return !request.getRequestURI().equals("/api/v1/price-events");
     }
 
 }

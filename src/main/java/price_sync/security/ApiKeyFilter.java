@@ -14,7 +14,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
     private final String expectedKey;
 
-    public ApiKeyFilter(String expectedKey){
+    public ApiKeyFilter(String expectedKey) {
         this.expectedKey = expectedKey;
     }
 
@@ -22,10 +22,15 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
         String apiKey = request.getHeader("X-API-Key");
-        if ((apiKey == null) || !apiKey.equals(expectedKey)){
+        if ((apiKey == null) || !apiKey.equals(expectedKey)) {
             response.setStatus(401);
             return;
         }
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@org.springframework.lang.NonNull HttpServletRequest request) {
+        return !request.getRequestURI().equals("/api/v1/price-events");
     }
 }

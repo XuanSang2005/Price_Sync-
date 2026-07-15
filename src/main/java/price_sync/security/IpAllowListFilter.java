@@ -24,10 +24,15 @@ public class IpAllowListFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String clientIp = request.getRemoteAddr();
         if (ipAllowList.contains(clientIp)) {
-            filterChain.doFilter(request, response); 
+            filterChain.doFilter(request, response);
         } else {
-            response.setStatus(403); 
+            response.setStatus(403);
         }
 
+    }
+
+    @Override
+    protected boolean shouldNotFilter(@org.springframework.lang.NonNull HttpServletRequest request) {
+        return !request.getRequestURI().equals("/api/v1/price-events");
     }
 }

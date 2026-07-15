@@ -112,6 +112,18 @@ public class PriceRecord {
         return storeIdOrZone;
     }
 
+    public Long getBatchId() {
+        return batchId;
+    }
+
+    public RecordStatus getValidationStatus() {
+        return validationStatus;
+    }
+
+    public String getSetAsideReason() {
+        return setAsideReason;
+    }
+
     public void markValid(){
         this.validationStatus = RecordStatus.VALID;
     }

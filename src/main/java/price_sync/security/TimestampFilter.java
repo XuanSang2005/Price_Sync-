@@ -42,4 +42,9 @@ public class TimestampFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    @Override
+    protected boolean shouldNotFilter(@org.springframework.lang.NonNull HttpServletRequest request) {
+        return !request.getRequestURI().equals("/api/v1/price-events");
+    }
+
 }
