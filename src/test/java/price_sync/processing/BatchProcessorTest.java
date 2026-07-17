@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import price_sync.domain.BatchLogRepository;
 import price_sync.domain.BatchStatus;
+import price_sync.domain.ConfigRepository;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
 import price_sync.domain.PriceRecord;
@@ -27,9 +28,10 @@ public class BatchProcessorTest {
     private final BatchLogRepository batchLogRepository = mock(BatchLogRepository.class);
     private final PayloadBuilder builder = mock(PayloadBuilder.class);
     private final OutputWriter writer = mock(OutputWriter.class);
+    private final ConfigRepository configRepository = mock(ConfigRepository.class);
 
     private final BatchProcessor processor = new BatchProcessor(priceRecordRepository, new Validator(),
-            priceBatchRepository, new Mapper(), builder, writer, batchLogRepository);
+            priceBatchRepository, new Mapper(), builder, writer, batchLogRepository, configRepository);
 
     @Test
     public void qua_20_pt_bi_setAside_thi_fail() {

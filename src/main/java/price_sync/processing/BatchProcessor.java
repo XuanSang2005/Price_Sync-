@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import price_sync.domain.BatchLog;
 import price_sync.domain.BatchLogRepository;
 import price_sync.domain.BatchStatus;
+import price_sync.domain.ConfigRepository;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
 import price_sync.domain.PriceRecord;
@@ -35,10 +36,11 @@ public class BatchProcessor {
     private final PayloadBuilder payloadBuilder;
     private final OutputWriter outputWriter;
     private final BatchLogRepository batchLogRepository;
+    private final ConfigRepository configRepository;
 
     public BatchProcessor(PriceRecordRepository priceRecordRepository, Validator validator,
             PriceBatchRepository priceBatchRepository, Mapper mapper, PayloadBuilder payloadBuilder,
-            OutputWriter outputWriter, BatchLogRepository batchLogRepository) {
+            OutputWriter outputWriter, BatchLogRepository batchLogRepository, ConfigRepository configRepository) {
         this.priceRecordRepository = priceRecordRepository;
         this.validator = validator;
         this.priceBatchRepository = priceBatchRepository;
@@ -46,6 +48,7 @@ public class BatchProcessor {
         this.payloadBuilder = payloadBuilder;
         this.outputWriter = outputWriter;
         this.batchLogRepository = batchLogRepository;
+        this.configRepository = configRepository;
     }
 
     @Transactional
@@ -89,8 +92,10 @@ public class BatchProcessor {
                 setAside++;
             }
         }
+        double threshold = configRepository.findByConfigKey("abort_threshold")
+                .map(c -> Double.parseDouble((c.getConfigValue()))).orElse(0.2);
         double failRate = (double) setAside / (valid + setAside);
-        if (failRate > 0.2 || valid == 0) {
+        if (failRate > threshold || valid == 0) {
             batch.markFail();
             log.warn("Batch {} BI HUY: {}/{} records set aside (ti le hong {}%)",
                     batchId, setAside, records.size(), Math.round(failRate * 100));
