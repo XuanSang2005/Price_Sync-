@@ -47,7 +47,7 @@ function EventsPage() {
     fetch('/api/v1/events')
       .then((response) => {
         if (!response.ok) {
-          throw new Error('API trả về lỗi ' + response.status)
+          throw new Error('API returned error ' + response.status)
         }
         return response.json()
       })
@@ -64,11 +64,11 @@ function EventsPage() {
   }, [])
 
   if (loading) {
-    return <p className="text-zinc-500 font-mono text-sm">Đang tải…</p>
+    return <p className="text-zinc-500 font-mono text-sm">Loading…</p>
   }
 
   if (error !== '') {
-    return <p className="text-red-400 font-mono text-sm">Không tải được danh sách: {error}</p>
+    return <p className="text-red-400 font-mono text-sm">Failed to load list: {error}</p>
   }
 
   // Các status CÓ MẶT trong dữ liệu (theo thứ tự vòng đời) → thành dãy tab
@@ -117,7 +117,7 @@ function EventsPage() {
           {visibleEvents.length === 0 ? (
             <tr>
               <td colSpan={5} className="px-6 py-10 text-center text-zinc-500">
-                Không có batch nào.
+                No events.
               </td>
             </tr>
           ) : (

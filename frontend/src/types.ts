@@ -37,3 +37,16 @@ export type ConfigItem = {
   config_key: string
   config_value: string
 }
+
+// Một luật mapping (GET /api/v1/mappings) — mỗi luật = một cột của file MNT
+export type MappingRule = {
+  id: number
+  record_type: string // FDETL | FDELE
+  position: number
+  json_field: string
+  mnt_column: string
+  rule_type: string // DIRECT | DEFAULT | VALUE_MAP | SPLIT
+  rule_value: string | null
+  data_type: string | null // STRING | NUMBER | DATE (null = field cố định, không kiểm)
+  required: boolean
+}

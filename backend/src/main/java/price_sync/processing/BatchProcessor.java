@@ -20,6 +20,8 @@ import price_sync.domain.BatchLog;
 import price_sync.domain.BatchLogRepository;
 import price_sync.domain.BatchStatus;
 import price_sync.domain.ConfigRepository;
+import price_sync.domain.MappingRule;
+import price_sync.domain.MappingRuleRepository;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
 import price_sync.domain.PriceRecord;
@@ -38,10 +40,12 @@ public class BatchProcessor {
     private final OutputWriter outputWriter;
     private final BatchLogRepository batchLogRepository;
     private final ConfigRepository configRepository;
+    private final MappingRuleRepository mappingRuleRepository;
 
     public BatchProcessor(PriceRecordRepository priceRecordRepository, Validator validator,
             PriceBatchRepository priceBatchRepository, Mapper mapper, PayloadBuilder payloadBuilder,
-            OutputWriter outputWriter, BatchLogRepository batchLogRepository, ConfigRepository configRepository) {
+            OutputWriter outputWriter, BatchLogRepository batchLogRepository, ConfigRepository configRepository,
+            MappingRuleRepository mappingRuleRepository) {
         this.priceRecordRepository = priceRecordRepository;
         this.validator = validator;
         this.priceBatchRepository = priceBatchRepository;
@@ -50,6 +54,7 @@ public class BatchProcessor {
         this.outputWriter = outputWriter;
         this.batchLogRepository = batchLogRepository;
         this.configRepository = configRepository;
+        this.mappingRuleRepository = mappingRuleRepository;
     }
 
     @Transactional
@@ -83,8 +88,9 @@ public class BatchProcessor {
         PriceBatch batch = priceBatchRepository.findById(batchId).get();
 
         List<PriceRecord> records = priceRecordRepository.findByBatchId(batchId);
+        List<MappingRule> rules = mappingRuleRepository.findAll(); // sổ để validate động field khai thêm
         for (PriceRecord record : records) {
-            Optional<String> reason = validator.validate(record);
+            Optional<String> reason = validator.validate(record, rules);
             if (reason.isEmpty()) {
                 record.markValid();
                 valid++;
@@ -115,6 +121,7 @@ public class BatchProcessor {
         LocalDate businessDate = batch.getGeneratedAt().toLocalDate();
         List<MntRow> rows = new ArrayList<>();
         List<PriceRecord> records = priceRecordRepository.findByBatchIdAndValidationStatus(batchId, RecordStatus.VALID);
+        List<MappingRule> rules = mappingRuleRepository.findAll(); // nạp sổ một lần cho cả batch
         boolean hasSetAside = false;
         Map<String, Integer> maxVersion = new HashMap<>();
         for (PriceRecord record : records) {
@@ -126,7 +133,7 @@ public class BatchProcessor {
                 record.markSupersede();
                 continue;
             }
-            Optional<MntRow> result = mapper.map(record, businessDate);
+            Optional<MntRow> result = mapper.map(record, businessDate, rules);
             if (result.isEmpty()) {
                 record.setAside("UNMAPPABLE_REASON");
                 hasSetAside = true;
@@ -139,7 +146,11 @@ public class BatchProcessor {
         Path finalFile = outputWriter.write(tempFile, batch);
         Files.deleteIfExists(tempFile); 
         log.info("Da ghi file MNT: {}", finalFile);
-        if (hasSetAside) {
+        // PARTIAL nếu batch có BẤT KỲ record SET_ASIDE nào — cả lúc validate lẫn lúc map.
+        // (supersede KHÔNG tính: status là SUPERSEDED chứ không phải SET_ASIDE)
+        boolean anySetAside = hasSetAside
+                || priceRecordRepository.existsByBatchIdAndValidationStatus(batchId, RecordStatus.SET_ASIDE);
+        if (anySetAside) {
             batch.markPartial();
         } else {
             batch.markWritten();

@@ -24,7 +24,7 @@ function EventDetailPage() {
     fetch('/api/v1/events/' + id)
       .then((response) => {
         if (!response.ok) {
-          throw new Error(response.status === 404 ? 'Không tìm thấy batch #' + id : 'Lỗi ' + response.status)
+          throw new Error(response.status === 404 ? 'Batch #' + id + ' not found' : 'Error ' + response.status)
         }
         return response.json()
       })
@@ -46,15 +46,15 @@ function EventDetailPage() {
     fetch('/api/v1/events/' + id + '/retry', { method: 'POST' })
       .then((response) => {
         if (response.status === 202) {
-          setRetryMessage('Đã kích hoạt xử lý lại — batch sẽ được retry trong giây lát.')
+          setRetryMessage('Reprocessing triggered — the batch will be retried shortly.')
         } else {
-          setRetryMessage('Batch không ở trạng thái FAILED nên không retry.')
+          setRetryMessage('Batch is not in FAILED status — nothing to retry.')
         }
         setRetrying(false)
         loadAll() // tải lại để thấy status mới (FAILED → PENDING_WRITE)
       })
       .catch(() => {
-        setRetryMessage('Gửi retry thất bại — kiểm tra backend.')
+        setRetryMessage('Retry request failed — check the backend.')
         setRetrying(false)
       })
   }
@@ -63,7 +63,7 @@ function EventDetailPage() {
     return (
       <div>
         <Link to="/events" className="text-zinc-400 hover:text-zinc-100 text-sm">
-          ← Về danh sách
+          ← Back to list
         </Link>
         <p className="mt-4 text-red-400">{error}</p>
       </div>
@@ -71,13 +71,13 @@ function EventDetailPage() {
   }
 
   if (detail === null) {
-    return <p className="text-zinc-500">Đang tải…</p>
+    return <p className="text-zinc-500">Loading…</p>
   }
 
   return (
     <div>
       <Link to="/events" className="text-zinc-400 hover:text-zinc-100 text-sm">
-        ← Về danh sách
+        ← Back to list
       </Link>
 
       {/* ===== Thẻ thông tin batch ===== */}
@@ -95,7 +95,7 @@ function EventDetailPage() {
               disabled={retrying}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600/90 text-white hover:bg-red-600 disabled:opacity-50"
             >
-              {retrying ? 'Đang gửi…' : 'Retry batch'}
+              {retrying ? 'Sending…' : 'Retry batch'}
             </button>
           )}
         </div>
@@ -130,7 +130,7 @@ function EventDetailPage() {
 
           {detail.records.length === 0 ? (
             <p className="text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-xl p-6 text-center">
-              Batch này không có record nào.
+              This batch has no records.
             </p>
           ) : (
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
@@ -167,10 +167,10 @@ function EventDetailPage() {
 
         {/* --- Timeline nhật ký vòng đời (audit log) --- */}
         <div>
-          <h2 className="font-medium text-zinc-200 mb-3">Lịch sử xử lý</h2>
+          <h2 className="font-medium text-zinc-200 mb-3">Processing history</h2>
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
             {logs.length === 0 ? (
-              <p className="text-zinc-500 text-sm">Chưa có nhật ký.</p>
+              <p className="text-zinc-500 text-sm">No history yet.</p>
             ) : (
               <ol className="relative border-l border-zinc-800 ml-2 space-y-5">
                 {logs.map((log, index) => {

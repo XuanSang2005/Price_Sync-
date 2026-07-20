@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import price_sync.domain.BatchLogRepository;
 import price_sync.domain.BatchStatus;
 import price_sync.domain.ConfigRepository;
+import price_sync.domain.MappingRule;
+import price_sync.domain.MappingRuleRepository;
 import price_sync.domain.PriceBatch;
 import price_sync.domain.PriceBatchRepository;
 import price_sync.domain.PriceRecord;
@@ -32,13 +34,30 @@ public class BatchProcessorTest {
     private final PayloadBuilder builder = mock(PayloadBuilder.class);
     private final OutputWriter writer = mock(OutputWriter.class);
     private final ConfigRepository configRepository = mock(ConfigRepository.class);
+    private final MappingRuleRepository mappingRuleRepository = mock(MappingRuleRepository.class);
 
     private final BatchProcessor processor = new BatchProcessor(priceRecordRepository, new Validator(),
-            priceBatchRepository, new Mapper(), builder, writer, batchLogRepository, configRepository);
+            priceBatchRepository, new Mapper(), builder, writer, batchLogRepository, configRepository,
+            mappingRuleRepository);
+
+    // Bộ luật chuẩn (FDETL 7 cột + FDELE 3 cột) — Mapper thật cần để dựng cột.
+    private static final String LOC_MAP = "{\"STORE\":\"S\",\"ZONE\":\"Z\"}";
+    private static final List<MappingRule> STANDARD_RULES = List.of(
+            new MappingRule("FDETL", 1, "item_id", "ITEM", "DIRECT", null),
+            new MappingRule("FDETL", 2, "store_id_or_zone", "LOC_TYPE", "VALUE_MAP", LOC_MAP),
+            new MappingRule("FDETL", 3, "store_id_or_zone", "LOCATION", "SPLIT", null),
+            new MappingRule("FDETL", 4, "price", "PRICE", "DIRECT", null),
+            new MappingRule("FDETL", 5, "currency", "CURRENCY", "DEFAULT", "VND"),
+            new MappingRule("FDETL", 6, "effective_start", "EFF_START", "DIRECT", null),
+            new MappingRule("FDETL", 7, "effective_end", "EFF_END", "DIRECT", null),
+            new MappingRule("FDELE", 1, "item_id", "ITEM", "DIRECT", null),
+            new MappingRule("FDELE", 2, "store_id_or_zone", "LOC_TYPE", "VALUE_MAP", LOC_MAP),
+            new MappingRule("FDELE", 3, "store_id_or_zone", "LOCATION", "SPLIT", null));
 
     @BeforeEach
     void stubBuilder() throws IOException{
         when(builder.build(any(), any())).thenReturn(Path.of("dummy.mnt"));
+        when(mappingRuleRepository.findAll()).thenReturn(STANDARD_RULES);
     }
 
     @Test
@@ -100,6 +119,20 @@ public class BatchProcessorTest {
         List<PriceRecord> records = List.of(recordHopLe(), recordHopLe(), recordHopLe(), recordUnmappable(),
                 recordHopLe());
         when(priceRecordRepository.findByBatchIdAndValidationStatus(1L, RecordStatus.VALID)).thenReturn(records);
+
+        processor.mapBatch(1L);
+        assertThat(priceBatch.getStatus()).isEqualTo(BatchStatus.PARTIAL);
+    }
+
+    @Test
+    public void mapBatch_validate_setAside_thi_Partial() throws IOException {
+        PriceBatch priceBatch = new PriceBatch("aaa", 2, OffsetDateTime.now());
+        when(priceBatchRepository.findById(1L)).thenReturn(Optional.of(priceBatch));
+        // các record VALID đều map được (không set-aside lúc map)
+        when(priceRecordRepository.findByBatchIdAndValidationStatus(1L, RecordStatus.VALID))
+                .thenReturn(List.of(recordHopLe(), recordHopLe()));
+        // nhưng batch CÓ record bị gạt lúc VALIDATE (dưới ngưỡng abort) → phải PARTIAL, không WRITTEN
+        when(priceRecordRepository.existsByBatchIdAndValidationStatus(1L, RecordStatus.SET_ASIDE)).thenReturn(true);
 
         processor.mapBatch(1L);
         assertThat(priceBatch.getStatus()).isEqualTo(BatchStatus.PARTIAL);

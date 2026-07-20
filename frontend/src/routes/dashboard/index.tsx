@@ -138,7 +138,7 @@ function DashboardPage() {
   }, [latest])
 
   if (loading) {
-    return <p className="text-zinc-500 font-mono text-sm">Đang tải…</p>
+    return <p className="text-zinc-500 font-mono text-sm">Loading…</p>
   }
 
   // ===== Tính các bước của stepper từ nhật ký thật =====
@@ -221,7 +221,7 @@ function DashboardPage() {
   return (
     // Cột dọc phủ hết chiều cao còn lại của màn hình (100vh - nav 3.5rem - padding main 4rem),
     // justify-between giãn đều 3 khối: tracker / lưới số liệu / health
-    <div className="flex flex-col justify-between min-h-[calc(100vh-7.5rem)]">
+    <div className="flex flex-col justify-between min-h-[calc(100vh-8rem)]">
       {/* ===== Tracker batch mới nhất ===== */}
       {latest !== null && (
         <div className="border-y border-zinc-800/60 py-8">
@@ -229,7 +229,7 @@ function DashboardPage() {
           <div className="flex items-center justify-between mb-8 font-mono">
             <div className="flex items-baseline gap-4">
               <span className="text-xs uppercase tracking-[0.25em] text-zinc-500">
-                Batch mới nhất
+                Latest batch
               </span>
               <Link
                 to="/events/$id"
@@ -301,7 +301,7 @@ function DashboardPage() {
         {/* --- Thẻ Tổng quan: số tổng + thanh tỉ lệ + legend gộp một chỗ --- */}
         <div className="col-span-12 lg:col-span-4 bg-zinc-900 border border-zinc-800 rounded-xl p-6 flex flex-col">
           <div className="font-mono text-xs uppercase tracking-[0.25em] text-zinc-500">
-            Tổng batch
+            Total batches
           </div>
           <div className="text-5xl font-semibold text-zinc-100 mt-3">{total}</div>
 
@@ -351,7 +351,7 @@ function DashboardPage() {
           {/* Nhóm 1: KẾT QUẢ — 3 trạng thái chốt sổ, ô lớn nổi bật */}
           <div>
             <div className="font-mono text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">
-              Kết quả
+              Results
             </div>
             <div className="grid grid-cols-3 gap-4">
               {['WRITTEN', 'PARTIAL', 'FAILED'].map((status) => {
@@ -381,7 +381,7 @@ function DashboardPage() {
                       {count}
                     </div>
                     <div className="font-mono text-xs text-zinc-600 mt-1.5">
-                      {count === 0 ? '—' : percent + '% tổng'}
+                      {count === 0 ? '—' : percent + '% of total'}
                     </div>
                   </div>
                 )
@@ -392,7 +392,7 @@ function DashboardPage() {
           {/* Nhóm 2: ĐANG XỬ LÝ — 4 trạng thái trung gian, ô gọn */}
           <div>
             <div className="font-mono text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">
-              Đang xử lý
+              In progress
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {['RECEIVED', 'PROCESSING', 'WRITING', 'PENDING_WRITE'].map((status) => {
@@ -428,25 +428,25 @@ function DashboardPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-5">
             <span className="font-mono text-xs uppercase tracking-[0.25em] text-zinc-500">
-              Hệ thống
+              System
             </span>
             {/* dòng tổng kết: chỉ hiện khi CÓ SỰ CỐ (mọi thứ ổn thì im lặng) */}
             {checks.some((check) => check.state === 'fail') && (
               <span className="flex items-center gap-2 text-sm text-red-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                Có sự cố
+                Issue detected
               </span>
             )}
           </div>
           <div className="flex items-center gap-4">
             {checkedAt !== '' && (
-              <span className="font-mono text-xs text-zinc-600">kiểm lúc {checkedAt}</span>
+              <span className="font-mono text-xs text-zinc-600">checked at {checkedAt}</span>
             )}
             <button
               onClick={runHealthChecks}
               className="font-mono text-xs uppercase tracking-[0.2em] text-zinc-400 hover:text-zinc-100 border border-zinc-800 hover:border-zinc-700 rounded-lg px-3 py-1.5 transition-colors"
             >
-              Kiểm tra lại
+              Recheck
             </button>
           </div>
         </div>
@@ -482,10 +482,10 @@ function DashboardPage() {
 
               <div className="font-mono text-xs">
                 {check.state === 'checking' ? (
-                  <span className="text-zinc-500">đang kiểm…</span>
+                  <span className="text-zinc-500">checking…</span>
                 ) : check.state === 'fail' ? (
                   <span className="text-red-400">
-                    {check.latencyMs === null ? 'KHÔNG KẾT NỐI ĐƯỢC' : 'LỖI · ' + check.latencyMs + ' ms'}
+                    {check.latencyMs === null ? 'UNREACHABLE' : 'ERROR · ' + check.latencyMs + ' ms'}
                   </span>
                 ) : (
                   <>
