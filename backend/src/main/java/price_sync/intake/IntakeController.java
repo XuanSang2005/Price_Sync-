@@ -1,9 +1,11 @@
 package price_sync.intake;
 
+import price_sync.intake.dto.PriceBatchRequest;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
-import price_sync.domain.PriceBatch;
+import price_sync.domain.batch.PriceBatch;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

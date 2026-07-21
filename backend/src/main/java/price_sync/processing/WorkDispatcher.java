@@ -10,8 +10,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import price_sync.domain.PriceBatch;
-import price_sync.domain.PriceBatchRepository;
+import price_sync.domain.batch.PriceBatch;
+import price_sync.domain.batch.PriceBatchRepository;
 
 @Component
 public class WorkDispatcher {

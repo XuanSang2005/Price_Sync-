@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import price_sync.domain.Config;
-import price_sync.domain.ConfigRepository;
-import price_sync.intake.InValidIdException;
+import price_sync.domain.config.Config;
+import price_sync.domain.config.ConfigRepository;
+import price_sync.intake.error.InValidIdException;
 
 @Service
 public class ConfigService {

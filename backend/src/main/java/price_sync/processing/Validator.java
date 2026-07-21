@@ -8,9 +8,9 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
-import price_sync.domain.ChangeType;
-import price_sync.domain.MappingRule;
-import price_sync.domain.PriceRecord;
+import price_sync.domain.record.ChangeType;
+import price_sync.domain.mapping.MappingRule;
+import price_sync.domain.record.PriceRecord;
 
 @Component
 public class Validator {

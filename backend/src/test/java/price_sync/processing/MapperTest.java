@@ -1,5 +1,9 @@
 package price_sync.processing;
 
+import price_sync.processing.mapper.Mapper;
+import price_sync.processing.mapper.MntRow;
+import price_sync.processing.mapper.MntRecordType;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
@@ -9,8 +13,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import price_sync.domain.MappingRule;
-import price_sync.domain.PriceRecord;
+import price_sync.domain.mapping.MappingRule;
+import price_sync.domain.record.PriceRecord;
 
 public class MapperTest {
     private final Mapper mapper = new Mapper();

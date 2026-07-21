@@ -7,7 +7,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import price_sync.domain.PriceBatch;
+import price_sync.domain.batch.PriceBatch;
 
 
 @Service

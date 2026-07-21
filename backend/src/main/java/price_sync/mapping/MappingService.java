@@ -6,8 +6,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import price_sync.domain.MappingRule;
-import price_sync.domain.MappingRuleRepository;
+import price_sync.domain.mapping.MappingRule;
+import price_sync.domain.mapping.MappingRuleRepository;
 
 @Service
 public class MappingService {

@@ -1,5 +1,10 @@
 package price_sync.processing;
 
+import price_sync.processing.mapper.Mapper;
+import price_sync.processing.mapper.MntRow;
+import price_sync.processing.writer.OutputWriter;
+import price_sync.processing.writer.PayloadBuilder;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,18 +21,18 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import price_sync.domain.BatchLog;
-import price_sync.domain.BatchLogRepository;
-import price_sync.domain.BatchStatus;
-import price_sync.domain.ConfigRepository;
-import price_sync.domain.MappingRule;
-import price_sync.domain.MappingRuleRepository;
-import price_sync.domain.PriceBatch;
-import price_sync.domain.PriceBatchRepository;
-import price_sync.domain.PriceRecord;
-import price_sync.domain.PriceRecordRepository;
-import price_sync.domain.RecordStatus;
-import price_sync.intake.InValidIdException;
+import price_sync.domain.batch.BatchLog;
+import price_sync.domain.batch.BatchLogRepository;
+import price_sync.domain.batch.BatchStatus;
+import price_sync.domain.config.ConfigRepository;
+import price_sync.domain.mapping.MappingRule;
+import price_sync.domain.mapping.MappingRuleRepository;
+import price_sync.domain.batch.PriceBatch;
+import price_sync.domain.batch.PriceBatchRepository;
+import price_sync.domain.record.PriceRecord;
+import price_sync.domain.record.PriceRecordRepository;
+import price_sync.domain.record.RecordStatus;
+import price_sync.intake.error.InValidIdException;
 
 @Component
 public class BatchProcessor {
@@ -147,7 +152,8 @@ public class BatchProcessor {
         }
         Path tempFile = payloadBuilder.build(rows, businessDate);
         Path finalFile = outputWriter.write(tempFile, batch);
-        Files.deleteIfExists(tempFile); 
+        batch.recordOutputFile(finalFile.getFileName().toString()); // lưu tên file để console đọc lại
+        Files.deleteIfExists(tempFile);
         log.info("Da ghi file MNT: {}", finalFile);
 
         boolean anySetAside = hasSetAside

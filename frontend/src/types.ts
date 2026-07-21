@@ -10,10 +10,17 @@ export type EventSummary = {
 
 export type EventRecord = {
   change_id: string
+  version: number
   item_id: string
   store_id_or_zone: string
+  price: number | null
+  currency: string | null
+  effective_start: string | null
+  effective_end: string | null
+  change_type: string
   validation_status: string
   set_aside_reason: string | null
+  extras: Record<string, unknown> | null
 }
 
 export type EventDetail = {
@@ -22,6 +29,8 @@ export type EventDetail = {
   version: number
   status: string
   generated_at: string
+  retry_count: number
+  output_file: string | null
   records: EventRecord[]
 }
 
@@ -30,6 +39,31 @@ export type EventLog = {
   status: string
   note: string | null
   created_at: string
+}
+
+// Nội dung file MNT thật (GET /api/v1/events/{id}/file)
+export type EventFile = {
+  file_name: string | null
+  exists: boolean
+  content: string | null
+  note: string | null
+}
+
+// Nhật ký toàn cục (GET /api/v1/logs)
+export type GlobalLog = {
+  event_id: number
+  batch_id: string
+  status: string
+  note: string | null
+  created_at: string
+}
+
+// Sức khoẻ hệ thống (GET /api/v1/health)
+export type Health = {
+  status: string
+  api: boolean
+  db: boolean
+  checked_at: string
 }
 
 // Một dòng cấu hình (GET /api/v1/config)
@@ -41,7 +75,7 @@ export type ConfigItem = {
 // Một luật mapping (GET /api/v1/mappings) — mỗi luật = một cột của file MNT
 export type MappingRule = {
   id: number
-  record_type: string // FDETL | FDELE
+  record_type: string // FDETL | FDELE | FHEAD | FTAIL
   position: number
   json_field: string
   mnt_column: string

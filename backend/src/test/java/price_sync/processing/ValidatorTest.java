@@ -10,8 +10,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import price_sync.domain.MappingRule;
-import price_sync.domain.PriceRecord;
+import price_sync.domain.mapping.MappingRule;
+import price_sync.domain.record.PriceRecord;
 
 public class ValidatorTest {
     private final Validator validator = new Validator();

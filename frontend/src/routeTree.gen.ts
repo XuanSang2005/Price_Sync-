@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConfigIndexRouteImport } from './routes/config/index'
+import { Route as ConnectionsIndexRouteImport } from './routes/connections/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as EventsIndexRouteImport } from './routes/events/index'
 import { Route as EventsIdRouteImport } from './routes/events/$id'
+import { Route as LogsIndexRouteImport } from './routes/logs/index'
+import { Route as MappingIndexRouteImport } from './routes/mapping/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,6 +26,11 @@ const IndexRoute = IndexRouteImport.update({
 const ConfigIndexRoute = ConfigIndexRouteImport.update({
   id: '/config/',
   path: '/config/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectionsIndexRoute = ConnectionsIndexRouteImport.update({
+  id: '/connections/',
+  path: '/connections/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -40,43 +48,90 @@ const EventsIdRoute = EventsIdRouteImport.update({
   path: '/events/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogsIndexRoute = LogsIndexRouteImport.update({
+  id: '/logs/',
+  path: '/logs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MappingIndexRoute = MappingIndexRouteImport.update({
+  id: '/mapping/',
+  path: '/mapping/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/events/$id': typeof EventsIdRoute
   '/config/': typeof ConfigIndexRoute
+  '/connections/': typeof ConnectionsIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
+  '/logs/': typeof LogsIndexRoute
+  '/mapping/': typeof MappingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/events/$id': typeof EventsIdRoute
   '/config': typeof ConfigIndexRoute
+  '/connections': typeof ConnectionsIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/events': typeof EventsIndexRoute
+  '/logs': typeof LogsIndexRoute
+  '/mapping': typeof MappingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/events/$id': typeof EventsIdRoute
   '/config/': typeof ConfigIndexRoute
+  '/connections/': typeof ConnectionsIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/events/': typeof EventsIndexRoute
+  '/logs/': typeof LogsIndexRoute
+  '/mapping/': typeof MappingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/events/$id' | '/config/' | '/dashboard/' | '/events/'
+  fullPaths:
+    | '/'
+    | '/events/$id'
+    | '/config/'
+    | '/connections/'
+    | '/dashboard/'
+    | '/events/'
+    | '/logs/'
+    | '/mapping/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/events/$id' | '/config' | '/dashboard' | '/events'
-  id: '__root__' | '/' | '/events/$id' | '/config/' | '/dashboard/' | '/events/'
+  to:
+    | '/'
+    | '/events/$id'
+    | '/config'
+    | '/connections'
+    | '/dashboard'
+    | '/events'
+    | '/logs'
+    | '/mapping'
+  id:
+    | '__root__'
+    | '/'
+    | '/events/$id'
+    | '/config/'
+    | '/connections/'
+    | '/dashboard/'
+    | '/events/'
+    | '/logs/'
+    | '/mapping/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EventsIdRoute: typeof EventsIdRoute
   ConfigIndexRoute: typeof ConfigIndexRoute
+  ConnectionsIndexRoute: typeof ConnectionsIndexRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   EventsIndexRoute: typeof EventsIndexRoute
+  LogsIndexRoute: typeof LogsIndexRoute
+  MappingIndexRoute: typeof MappingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -93,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/config'
       fullPath: '/config/'
       preLoaderRoute: typeof ConfigIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connections/': {
+      id: '/connections/'
+      path: '/connections'
+      fullPath: '/connections/'
+      preLoaderRoute: typeof ConnectionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -116,6 +178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/logs/': {
+      id: '/logs/'
+      path: '/logs'
+      fullPath: '/logs/'
+      preLoaderRoute: typeof LogsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mapping/': {
+      id: '/mapping/'
+      path: '/mapping'
+      fullPath: '/mapping/'
+      preLoaderRoute: typeof MappingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -123,8 +199,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EventsIdRoute: EventsIdRoute,
   ConfigIndexRoute: ConfigIndexRoute,
+  ConnectionsIndexRoute: ConnectionsIndexRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   EventsIndexRoute: EventsIndexRoute,
+  LogsIndexRoute: LogsIndexRoute,
+  MappingIndexRoute: MappingIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

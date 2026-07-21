@@ -1,174 +1,109 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import type { EventSummary } from '../../types'
-import { StatusText, BATCH_STATUS_ORDER } from '../../components/StatusBadge'
+import { StatusPill } from '../../lib/status'
 import { formatTimeDate } from '../../utils/format'
+import { SearchIcon } from '../../components/icons'
 
-// "/events" — danh sách batch, style terminal/mono: tab filter + bảng hairline
-export const Route = createFileRoute('/events/')({
-  component: EventsPage,
-})
+export const Route = createFileRoute('/events/')({ component: EventsPage })
 
-// Một tab filter phía trên bảng (ALL 12 / WRITTEN 6 / FAILED 6...)
-// active = tab đang chọn → chữ sáng + gạch chân
-function FilterTab({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string
-  count: number
-  active: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={
-        'font-mono text-xs uppercase tracking-[0.25em] pb-1.5 border-b ' +
-        (active
-          ? 'text-zinc-100 border-zinc-100'
-          : 'text-zinc-500 border-transparent hover:text-zinc-300')
-      }
-    >
-      {label} {count}
-    </button>
-  )
+// Result text derived from real status (no fabricated numbers).
+function resultText(status: string): string {
+  switch (status) {
+    case 'WRITTEN': return 'Written to Xcenter'
+    case 'PARTIAL': return 'Written, some set aside'
+    case 'FAILED': return 'Failed — see detail'
+    case 'PENDING_WRITE': return 'Retry pending'
+    default: return 'Processing'
+  }
 }
 
 function EventsPage() {
+  const navigate = useNavigate()
   const [events, setEvents] = useState<EventSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [filter, setFilter] = useState('ALL') // tab đang chọn ('ALL' hoặc tên status)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    let cancelled = false // tránh setState sau khi rời trang
-
-    function load(isFirst: boolean) {
-      fetch('/api/v1/events')
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('API returned error ' + response.status)
-          }
-          return response.json()
-        })
-        .then((data: EventSummary[]) => {
-          if (cancelled) {
-            return
-          }
-          // Sắp id giảm dần → batch mới nhất lên đầu bảng
-          const newestFirst = [...data].sort((a, b) => b.id - a.id)
-          setEvents(newestFirst)
-          setLoading(false)
-        })
-        .catch((err: Error) => {
-          if (cancelled) {
-            return
-          }
-          // Chỉ lần tải ĐẦU mới hiện màn lỗi; poll lỗi tạm thời → giữ data cũ, không nhảy màn lỗi
-          if (isFirst) {
-            setError(err.message)
-            setLoading(false)
-          }
-        })
+    function load() {
+      fetch('/api/v1/events').then((r) => r.json()).then(setEvents).catch(() => {})
     }
-
-    load(true) // tải ngay
-    const timer = setInterval(() => load(false), 4000) // poll lại mỗi 4s → console tự cập nhật
-    return () => {
-      cancelled = true
-      clearInterval(timer)
-    }
+    load()
+    const t = setInterval(load, 5000)
+    return () => clearInterval(t)
   }, [])
 
-  if (loading) {
-    return <p className="text-zinc-500 font-mono text-sm">Loading…</p>
-  }
+  const present = [...new Set(events.map((e) => e.status))]
+  const tabs = ['all', ...present]
 
-  if (error !== '') {
-    return <p className="text-red-400 font-mono text-sm">Failed to load list: {error}</p>
-  }
+  const q = search.trim().toLowerCase()
+  const rows = [...events]
+    .sort((a, b) => b.id - a.id)
+    .filter((e) => (statusFilter === 'all' || e.status === statusFilter))
+    .filter((e) => !q || e.batch_id.toLowerCase().includes(q))
 
-  // Các status CÓ MẶT trong dữ liệu (theo thứ tự vòng đời) → thành dãy tab
-  const presentStatuses = BATCH_STATUS_ORDER.filter((status) =>
-    events.some((event) => event.status === status)
-  )
-
-  // Danh sách hiển thị theo tab đang chọn
-  const visibleEvents =
-    filter === 'ALL' ? events : events.filter((event) => event.status === filter)
+  const tabClass = (active: boolean) =>
+    'text-[12.5px] px-3 py-[5px] rounded-md border-none cursor-pointer whitespace-nowrap ' +
+    (active ? 'bg-surface text-fg font-semibold shadow-[var(--shadow)]' : 'bg-transparent text-muted font-medium')
 
   return (
-    <div className="border-y border-zinc-800/60 font-mono">
-      {/* ===== Dãy tab filter ===== */}
-      <div className="flex items-center gap-8 px-6 pt-5">
-        <FilterTab
-          label="All"
-          count={events.length}
-          active={filter === 'ALL'}
-          onClick={() => setFilter('ALL')}
-        />
-        {presentStatuses.map((status) => (
-          <FilterTab
-            key={status}
-            label={status}
-            count={events.filter((event) => event.status === status).length}
-            active={filter === status}
-            onClick={() => setFilter(status)}
-          />
-        ))}
+    <div className="px-7 pt-[26px] pb-11 max-w-[1220px] mx-auto w-full flex flex-col gap-[18px]">
+      <div>
+        <h1 className="m-0 text-[21px] font-semibold tracking-tight">Events</h1>
+        <p className="mt-[5px] text-[13.5px] text-muted">Every price event, received to written.</p>
       </div>
 
-      {/* ===== Bảng ===== */}
-      {/* table-fixed = bề rộng cột KHÓA theo % khai ở thead — cột này đổi không xô cột kia */}
-      <table className="w-full text-sm mt-4 table-fixed">
-        <thead>
-          <tr className="border-y border-zinc-800/60 text-left text-[11px] uppercase tracking-[0.25em] text-zinc-500">
-            <th className="w-[8%] px-6 py-3 font-normal">ID</th>
-            <th className="w-[26%] pl-14 pr-6 py-3 font-normal">Batch</th>
-            <th className="w-[18%] px-6 py-3 font-normal text-center">Version</th>
-            <th className="w-[24%] pl-24 pr-6 py-3 font-normal">Status</th>
-            <th className="w-[24%] px-6 py-3 font-normal text-right">Generated</th>
-          </tr>
-        </thead>
-        <tbody>
-          {visibleEvents.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-6 py-10 text-center text-zinc-500">
-                No events.
-              </td>
-            </tr>
-          ) : (
-            visibleEvents.map((event) => (
-              <tr
-                key={event.id}
-                className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-900/40"
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex gap-[3px] p-[3px] bg-surface2 border border-border rounded-[9px] flex-wrap">
+          {tabs.map((t) => (
+            <button key={t} onClick={() => setStatusFilter(t)} className={tabClass(statusFilter === t)}>
+              {t === 'all' ? 'All' : t}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 min-w-[200px] max-w-[300px] ml-auto">
+          <span className="absolute left-[11px] top-1/2 -translate-y-1/2 text-faint grid place-items-center">
+            <SearchIcon />
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search batch id…"
+            className="w-full py-2 pl-[34px] pr-[11px] border border-border rounded-[9px] bg-surface text-fg text-[13px] outline-none focus:border-accent"
+          />
+        </div>
+      </div>
+
+      <div className="bg-surface border border-border rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[720px]">
+            <div className="grid gap-3 px-[18px] py-[11px] border-b border-border bg-surface2 text-[10.5px] uppercase tracking-[0.05em] text-faint font-semibold"
+                 style={{ gridTemplateColumns: '110px 1.2fr 70px 130px 1.4fr' }}>
+              <div>Time</div><div>Batch ID</div><div>Ver</div><div>Status</div><div>Result</div>
+            </div>
+            {rows.map((e) => (
+              <div
+                key={e.id}
+                onClick={() => navigate({ to: '/events/$id', params: { id: String(e.id) } })}
+                className="grid gap-3 px-[18px] py-[13px] border-b border-border items-center cursor-pointer hover:bg-surface2"
+                style={{ gridTemplateColumns: '110px 1.2fr 70px 130px 1.4fr' }}
               >
-                <td className="px-6 py-5 text-zinc-500">#{event.id}</td>
-                <td className="pl-14 pr-6 py-5">
-                  {/* Click tên batch → sang trang chi tiết */}
-                  <Link
-                    to="/events/$id"
-                    params={{ id: String(event.id) }}
-                    className="text-zinc-100 hover:text-white hover:underline underline-offset-4"
-                  >
-                    {event.batch_id}
-                  </Link>
-                </td>
-                <td className="px-6 py-5 text-zinc-500 text-center">v{event.version}</td>
-                <td className="pl-24 pr-6 py-5">
-                  <StatusText status={event.status} />
-                </td>
-                <td className="px-6 py-5 text-zinc-500 text-right">
-                  {formatTimeDate(event.generated_at)}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+                <div className="font-mono text-[11.5px] text-muted">{formatTimeDate(e.generated_at)}</div>
+                <div className="font-mono text-[12px] font-medium truncate">{e.batch_id}</div>
+                <div className="font-mono text-[12px] text-muted">v{e.version}</div>
+                <div><StatusPill status={e.status} /></div>
+                <div className="text-[12px] text-muted truncate">{resultText(e.status)}</div>
+              </div>
+            ))}
+            {rows.length === 0 && (
+              <div className="px-7 py-7 text-center text-muted text-[13px]">No events match.</div>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="text-[11.5px] text-faint">
+        Showing {rows.length} of {events.length} · status covers this system only (received → Xcenter).
+      </div>
     </div>
   )
 }

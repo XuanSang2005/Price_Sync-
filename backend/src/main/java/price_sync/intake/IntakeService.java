@@ -1,5 +1,9 @@
 package price_sync.intake;
 
+import price_sync.intake.dto.PriceBatchRequest;
+import price_sync.intake.dto.PriceRecordRequest;
+import price_sync.intake.error.DuplicateBatchException;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,13 +13,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import price_sync.domain.BatchLog;
-import price_sync.domain.BatchLogRepository;
-import price_sync.domain.MappingRuleRepository;
-import price_sync.domain.PriceBatch;
-import price_sync.domain.PriceBatchRepository;
-import price_sync.domain.PriceRecord;
-import price_sync.domain.PriceRecordRepository;
+import price_sync.domain.batch.BatchLog;
+import price_sync.domain.batch.BatchLogRepository;
+import price_sync.domain.mapping.MappingRuleRepository;
+import price_sync.domain.batch.PriceBatch;
+import price_sync.domain.batch.PriceBatchRepository;
+import price_sync.domain.record.PriceRecord;
+import price_sync.domain.record.PriceRecordRepository;
 
 @Service
 public class IntakeService {

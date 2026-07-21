@@ -1,5 +1,9 @@
 package price_sync.processing;
 
+import price_sync.processing.mapper.MntRow;
+import price_sync.processing.mapper.MntRecordType;
+import price_sync.processing.writer.XstoreMntBuilder;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;

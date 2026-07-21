@@ -1,5 +1,9 @@
 package price_sync.processing;
 
+import price_sync.processing.mapper.Mapper;
+import price_sync.processing.writer.PayloadBuilder;
+import price_sync.processing.writer.OutputWriter;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -15,16 +19,16 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import price_sync.domain.BatchLogRepository;
-import price_sync.domain.BatchStatus;
-import price_sync.domain.ConfigRepository;
-import price_sync.domain.MappingRule;
-import price_sync.domain.MappingRuleRepository;
-import price_sync.domain.PriceBatch;
-import price_sync.domain.PriceBatchRepository;
-import price_sync.domain.PriceRecord;
-import price_sync.domain.PriceRecordRepository;
-import price_sync.domain.RecordStatus;
+import price_sync.domain.batch.BatchLogRepository;
+import price_sync.domain.batch.BatchStatus;
+import price_sync.domain.config.ConfigRepository;
+import price_sync.domain.mapping.MappingRule;
+import price_sync.domain.mapping.MappingRuleRepository;
+import price_sync.domain.batch.PriceBatch;
+import price_sync.domain.batch.PriceBatchRepository;
+import price_sync.domain.record.PriceRecord;
+import price_sync.domain.record.PriceRecordRepository;
+import price_sync.domain.record.RecordStatus;
 
 public class BatchProcessorTest {
 
@@ -58,6 +62,7 @@ public class BatchProcessorTest {
     @BeforeEach
     void stubBuilder() throws IOException{
         when(builder.build(any(), any())).thenReturn(Path.of("dummy.mnt"));
+        when(writer.write(any(), any())).thenReturn(Path.of("out.mnt")); // mapBatch đọc getFileName() của kết quả write
         when(mappingRuleRepository.findAll()).thenReturn(STANDARD_RULES);
     }
 

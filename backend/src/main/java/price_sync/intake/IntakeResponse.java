@@ -2,7 +2,7 @@ package price_sync.intake;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import price_sync.domain.BatchStatus;
+import price_sync.domain.batch.BatchStatus;
 
 public record IntakeResponse(
         @JsonProperty("batch_id") String batchId,

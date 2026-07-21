@@ -17,6 +17,27 @@ function RuleTypeTag({ type }: { type: string }) {
   return <span className={'font-mono text-[10px] uppercase tracking-widest ' + style}>{type}</span>
 }
 
+// Cột CHUẨN — khớp các getter cứng trong Mapper.buildFields. Đây là cột trong hợp đồng Oracle
+// (thứ tự cố định), xoá sẽ lệch file → KHÔNG cho xoá trên UI.
+const STANDARD_FIELDS = new Set([
+  'item_id',
+  'store_id_or_zone',
+  'price',
+  'currency',
+  'effective_start',
+  'effective_end',
+])
+
+// Ổ khoá vẽ bằng SVG (không dùng icon lib) — báo dòng này bị khoá, không xoá được
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 12 12" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="1.1">
+      <rect x="2.5" y="5.3" width="7" height="4.7" rx="1" />
+      <path d="M4 5.3V4a2 2 0 0 1 4 0v1.3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 // Ô form (label trên + control dưới) — khai NGOÀI component để nhập không mất focus
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -175,13 +196,24 @@ export function MappingsTab() {
                     <span className="w-24 shrink-0 text-right">
                       <RuleTypeTag type={rule.rule_type} />
                     </span>
-                    <button
-                      onClick={() => removeRule(rule.id)}
-                      className="w-4 shrink-0 text-zinc-700 hover:text-red-400 leading-none opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Remove rule"
-                    >
-                      ×
-                    </button>
+                    {STANDARD_FIELDS.has(rule.json_field) ? (
+                      // cột chuẩn (hợp đồng Oracle) → khoá, không cho xoá
+                      <span
+                        className="w-4 shrink-0 flex items-center justify-center text-zinc-700 cursor-not-allowed"
+                        title="Standard column (Oracle contract) — cannot be removed"
+                      >
+                        <LockIcon />
+                      </span>
+                    ) : (
+                      // field tự thêm → cho xoá
+                      <button
+                        onClick={() => removeRule(rule.id)}
+                        className="w-4 shrink-0 text-zinc-700 hover:text-red-400 leading-none opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove rule"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

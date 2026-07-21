@@ -1,5 +1,10 @@
 package price_sync.security;
 
+import price_sync.security.filter.ApiKeyFilter;
+import price_sync.security.filter.HmacFIlter;
+import price_sync.security.filter.IpAllowListFilter;
+import price_sync.security.filter.TimestampFilter;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,7 +13,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import price_sync.domain.ConfigRepository;
+import price_sync.domain.config.ConfigRepository;
 
 @Configuration
 public class SecurityConfig {
