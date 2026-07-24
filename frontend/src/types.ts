@@ -64,8 +64,6 @@ export type MappingMeta = {
   source_fields: string[]
   record_types: string[]
   rule_types: string[]
-  data_types: string[]
-  standard_fields: string[]
 }
 
 // Một dòng cấu hình (GET /api/v1/config)
@@ -98,7 +96,6 @@ export type MappingRule = {
   mnt_column: string
   rule_type: string // DIRECT | DEFAULT | VALUE_MAP | SPLIT
   rule_value: string | null
-  data_type: string | null // STRING | NUMBER | DATE (null = field cố định, không kiểm)
   required: boolean
   locked: boolean // cột chuẩn (hợp đồng Oracle) — khoá cứng: không đổi nguồn / xoá
 }

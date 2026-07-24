@@ -10,6 +10,5 @@ public record MappingCreateRequest(
         @JsonProperty("mnt_column") String mntColumn,
         @JsonProperty("rule_type") String ruleType,
         @JsonProperty("rule_value") String ruleValue,
-        @JsonProperty("data_type") String dataType,
         boolean required) {
 }

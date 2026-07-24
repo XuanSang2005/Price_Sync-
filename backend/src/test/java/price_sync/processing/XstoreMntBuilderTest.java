@@ -30,4 +30,15 @@ public class XstoreMntBuilderTest {
         assertThat(lines).containsExactly("FHEAD,2026-07-15", "FDETL,SKU1,S,001,100,VND,2026-07-17,","FDELE,SKU2,Z,NORTH","FTAIL,2");
     }
 
+    @Test
+    void escape_rfc4180_gia_tri_ban_khong_be_gay_file() throws IOException {
+        List<MntRow> rows = List.of(
+                new MntRow(MntRecordType.FDETL, List.of("a,b", "say \"hi\"", "clean")));
+        Path file = builder.build(rows, LocalDate.of(2026, 7, 15));
+        String content = Files.readString(file);
+
+        // "a,b" (có phẩy) → bọc nháy;  say "hi" (có nháy) → nhân đôi nháy + bọc;  clean → giữ nguyên
+        assertThat(content).contains("FDETL,\"a,b\",\"say \"\"hi\"\"\",clean");
+    }
+
 }

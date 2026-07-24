@@ -95,7 +95,7 @@ public class BatchProcessor {
         PriceBatch batch = priceBatchRepository.findById(batchId).get();
 
         List<PriceRecord> records = priceRecordRepository.findByBatchId(batchId);
-        List<MappingRule> rules = mappingRuleRepository.findAll(); 
+        List<MappingRule> rules = mappingRuleRepository.findAll();
         for (PriceRecord record : records) {
             Optional<String> reason = validator.validate(record, rules);
             if (reason.isEmpty()) {

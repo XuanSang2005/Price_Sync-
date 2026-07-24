@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Price Sync — Hướng dẫn cài đặt</title>
+<style>
+  @page { size: A4; margin: 20mm 16mm 18mm 16mm; }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: #1c2024; font-size: 10.6pt; line-height: 1.55; margin: 0;
+  }
+  h1, h2, h3, h4 { color: #0f1419; line-height: 1.25; font-weight: 700; }
+  h1 { font-size: 22pt; margin: 0 0 4px; }
+  h2 { font-size: 15pt; margin: 26px 0 8px; padding-bottom: 5px; border-bottom: 2px solid #d7dbe0; }
+  h3 { font-size: 12pt; margin: 18px 0 6px; color: #1b2b3a; }
+  h4 { font-size: 10.6pt; margin: 12px 0 4px; color: #33414f; }
+  p { margin: 6px 0; }
+  ul, ol { margin: 6px 0; padding-left: 22px; }
+  li { margin: 3px 0; }
+  a { color: #1a56b8; text-decoration: none; }
+  code {
+    font-family: "SF Mono", "JetBrains Mono", "Consolas", monospace;
+    font-size: 9pt; background: #eef1f4; border: 1px solid #dde2e7;
+    padding: 0.5px 4px; border-radius: 4px; color: #b3005a;
+  }
+  pre {
+    font-family: "SF Mono", "JetBrains Mono", "Consolas", monospace;
+    font-size: 8.7pt; line-height: 1.5; background: #0f1720; color: #e5edf5;
+    padding: 12px 14px; border-radius: 8px; overflow-x: auto;
+    margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  pre code { background: none; border: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #7c8b99; } /* comment */
+  pre .p { color: #7fd1b9; } /* prompt / emphasis */
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 9.3pt; }
+  th, td { border: 1px solid #d0d6dc; padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: #eef1f4; font-weight: 700; color: #1b2b3a; }
+  tr:nth-child(even) td { background: #f7f9fb; }
+  .lead { font-size: 11pt; color: #48525c; margin: 2px 0 0; }
+  .meta { color: #6b7580; font-size: 9pt; margin-top: 6px; }
+  .callout { border-radius: 8px; padding: 9px 13px; margin: 10px 0; font-size: 9.7pt; }
+  .note { background: #eef4fb; border-left: 4px solid #2f6fd0; }
+  .warn { background: #fdf3ea; border-left: 4px solid #d98324; }
+  .danger { background: #fdecec; border-left: 4px solid #d64545; }
+  .ok { background: #ecf6ef; border-left: 4px solid #2e9e5b; }
+  .callout b { color: #0f1419; }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 1px 7px; border-radius: 20px; vertical-align: middle; }
+  .tag-a { background: #dfeafc; color: #1a4fa0; }
+  .tag-b { background: #e6f3ea; color: #1f7a45; }
+  .cover { padding: 30px 0 10px; border-bottom: 3px solid #0f1419; margin-bottom: 6px; }
+  .cover .kicker { font-size: 9.5pt; letter-spacing: 3px; text-transform: uppercase; color: #6b7580; font-weight: 700; }
+  .badges { margin-top: 14px; }
+  .badges span { display: inline-block; background: #eef1f4; border: 1px solid #dde2e7;
+    border-radius: 6px; padding: 3px 9px; font-size: 8.6pt; margin: 0 6px 6px 0; color: #33414f; }
+  .toc { background: #f7f9fb; border: 1px solid #e2e7ec; border-radius: 8px; padding: 12px 18px; margin: 16px 0; }
+  .toc ol { margin: 4px 0; }
+  .toc a { color: #1b2b3a; }
+  .section { page-break-inside: auto; }
+  h2 { page-break-after: avoid; }
+  pre, table, .callout { page-break-inside: avoid; }
+  .pb { page-break-before: always; }
+  .kv td:first-child { width: 34%; font-family: "SF Mono", monospace; font-size: 8.8pt; color: #b3005a; }
+  hr { border: none; border-top: 1px solid #e2e7ec; margin: 20px 0; }
+  .small { font-size: 8.8pt; color: #6b7580; }
+  footer { margin-top: 26px; padding-top: 10px; border-top: 1px solid #e2e7ec; color: #8a939c; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">HQ → Oracle Retail Xstore · Price Synchronization Middleware</div>
+  <h1>Price Sync — Hướng dẫn cài đặt &amp; vận hành</h1>
+  <p class="lead">Cài đặt, chạy và kiểm thử hệ thống đồng bộ giá từ HQ xuống POS (Spring Boot + React + PostgreSQL).</p>
+  <div class="badges">
+    <span>Spring Boot 3.5 · Java 17</span>
+    <span>React 19 · Vite · TypeScript</span>
+    <span>PostgreSQL 16 · Flyway</span>
+    <span>Docker Compose</span>
+    <span>Repo: XuanSang2005/Price_Sync</span>
+  </div>
+  <p class="meta">Phiên bản tài liệu: 1.0 · Ngày 23/07/2026 · App version 2.4.0 (UAT)</p>
+</div>
+
+<div class="toc">
+  <b>Mục lục</b>
+  <ol>
+    <li><a href="#s1">Hệ thống này là gì</a></li>
+    <li><a href="#s2">Yêu cầu môi trường (Prerequisites)</a></li>
+    <li><a href="#s3">Lấy mã nguồn</a></li>
+    <li><a href="#s4">Biến môi trường &amp; secrets</a></li>
+    <li><a href="#s5">Cách A — Chạy toàn bộ bằng Docker Compose (khuyến nghị)</a></li>
+    <li><a href="#s6">Cách B — Chạy local để phát triển</a></li>
+    <li><a href="#s7">Đóng gói bản production (1 cổng duy nhất)</a></li>
+    <li><a href="#s8">Kiểm tra sau cài đặt (Smoke test)</a></li>
+    <li><a href="#s9">Cấu hình sau cài đặt (không cần redeploy)</a></li>
+    <li><a href="#s10">Xử lý sự cố thường gặp</a></li>
+    <li><a href="#s11">Phụ lục — cổng, endpoint, migration</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="s1">
+<h2>1. Hệ thống này là gì</h2>
+<p><b>Price Sync</b> là middleware đồng bộ giá HQ → POS cho Oracle Retail Xstore. Mỗi đêm, HQ gửi (POST) một lô giá dạng JSON tới hệ thống; hệ thống xác thực, kiểm tra, ánh xạ (mapping) và tạo ra file <b>MNT</b> (Oracle DataLoader) rồi ghi vào thư mục Xcenter inbound để Xstore phân phối xuống POS.</p>
+<p>Về mặt triển khai, đây là một <b>modular monolith</b> gồm 2 phần đóng gói chung:</p>
+<ul>
+  <li><b>Backend</b> (<code>backend/</code>) — ứng dụng Spring Boot: API intake + worker xử lý nền + ops console API. PostgreSQL giữ toàn bộ trạng thái; Flyway tự tạo &amp; nâng cấp schema khi khởi động.</li>
+  <li><b>Frontend</b> (<code>frontend/</code>) — SPA React (Vite + TypeScript + TanStack Router + Tailwind). Khi đóng gói production, UI được build thẳng vào <code>static/</code> của Spring nên chỉ chạy <b>một cổng 8080</b>.</li>
+</ul>
+<p><b>Luồng xử lý:</b> <code>POST /api/v1/price-events</code> (202) → lưu batch <code>RECEIVED</code> → worker định kỳ claim (<code>SELECT … FOR UPDATE SKIP LOCKED</code>) → validate → map → build file MNT → ghi ra Xcenter inbound → batch <code>WRITTEN</code> (hoặc <code>PARTIAL</code>/<code>FAILED</code>, có retry &amp; email alert).</p>
+<div class="callout note"><b>Chọn cách cài nào?</b> Muốn chạy thử/demo nhanh nhất → dùng <b>Cách A (Docker Compose)</b>: một lệnh dựng cả Postgres + app + hộp thư mail. Muốn code/sửa &amp; hot-reload → dùng <b>Cách B (local dev)</b>.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="s2">
+<h2>2. Yêu cầu môi trường (Prerequisites)</h2>
+
+<h3>2.1. Cho Cách A — Docker <span class="tag tag-a">A</span></h3>
+<table>
+  <tr><th>Công cụ</th><th>Phiên bản tối thiểu</th><th>Ghi chú</th></tr>
+  <tr><td>Docker Engine</td><td>24+ (đã kiểm với 29)</td><td>Có kèm <code>docker compose</code> v2/v5</td></tr>
+  <tr><td>Docker Compose</td><td>v2+ (đã kiểm với v5)</td><td>Dùng lệnh <code>docker compose</code> (không phải <code>docker-compose</code>)</td></tr>
+  <tr><td>Git</td><td>bất kỳ</td><td>Để clone mã nguồn</td></tr>
+</table>
+<p class="small">Không cần cài Java / Node / Postgres trên máy — mọi thứ nằm trong image.</p>
+
+<h3>2.2. Cho Cách B — Local dev <span class="tag tag-b">B</span></h3>
+<table>
+  <tr><th>Công cụ</th><th>Phiên bản</th><th>Ghi chú</th></tr>
+  <tr><td>JDK</td><td><b>17</b> (bắt buộc)</td><td>Ví dụ Temurin 17. <code>pom.xml</code> đặt <code>java.version=17</code></td></tr>
+  <tr><td>Maven</td><td>—</td><td>Không cần cài — dùng Maven Wrapper <code>./mvnw</code> có sẵn trong <code>backend/</code></td></tr>
+  <tr><td>Node.js</td><td><b>20+</b> (khuyến nghị 22)</td><td>Docker build dùng <code>node:22</code>. Frontend cần npm</td></tr>
+  <tr><td>PostgreSQL</td><td><b>16</b></td><td>Chạy local ở cổng 5432, có database <code>price_sync</code></td></tr>
+  <tr><td>Git</td><td>bất kỳ</td><td></td></tr>
+</table>
+
+<h4>Kiểm tra nhanh môi trường (Cách B)</h4>
+<pre><code><span class="c"># mỗi lệnh phải in ra phiên bản, không báo "command not found"</span>
+java -version        <span class="c"># cần openjdk 17.x</span>
+node -v              <span class="c"># cần v20+ (v22 lý tưởng)</span>
+psql --version       <span class="c"># cần PostgreSQL 16.x</span>
+git --version</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<div class="section" id="s3">
+<h2>3. Lấy mã nguồn</h2>
+<pre><code>git clone https://github.com/XuanSang2005/Price_Sync.git
+cd Price_Sync</code></pre>
+<p>Cấu trúc thư mục chính:</p>
+<pre><code>Price_Sync/
+├── Dockerfile              <span class="c"># build 3 tầng: UI → jar (kèm UI) → runtime JRE</span>
+├── docker-compose.yml      <span class="c"># db (Postgres) + app + mailpit</span>
+├── backend/                <span class="c"># Spring Boot (chạy ./mvnw ở ĐÂY)</span>
+│   ├── pom.xml
+│   ├── mvnw, mvnw.cmd       <span class="c"># Maven Wrapper — không cần cài Maven</span>
+│   └── src/main/resources/
+│       ├── application.properties
+│       └── db/migration/    <span class="c"># V1..V19 — Flyway tự chạy khi khởi động</span>
+└── frontend/               <span class="c"># React + Vite (chạy npm ở ĐÂY)</span>
+    ├── package.json
+    └── vite.config.ts</code></pre>
+<div class="callout note"><b>Lưu ý về file bị gitignore:</b> <code>run.sh</code> (script chạy local có chứa mật khẩu Gmail cá nhân) và thư mục <code>backend/src/main/resources/static/</code> (UI build sẵn) <b>không</b> nằm trong repo. Bạn sẽ tự tạo/khôi phục chúng theo hướng dẫn bên dưới.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s4">
+<h2>4. Biến môi trường &amp; secrets</h2>
+<p>Từ bản 07/2026, <b>secret không nằm trong repo</b> — <code>application.properties</code> chỉ chứa placeholder <code>${...}</code>. Thiếu biến bắt buộc → app <b>cố tình chết ngay khi khởi động</b> (fail-fast) với thông báo <code>Could not resolve placeholder 'HQ_API_KEY'</code>.</p>
+
+<h4>Biến bắt buộc</h4>
+<table class="kv">
+  <tr><th>Biến</th><th>Ý nghĩa</th><th>Giá trị dùng cho dev/demo</th></tr>
+  <tr><td>HQ_API_KEY</td><td>API key HQ gửi ở header <code>X-Api-Key</code></td><td><code>hq-secret-key-123</code></td></tr>
+  <tr><td>HQ_HMAC_SECRET</td><td>Khoá bí mật ký HMAC-SHA256 request</td><td><code>shared-secret-abc</code></td></tr>
+</table>
+
+<h4>Biến tuỳ chọn (có mặc định)</h4>
+<table class="kv">
+  <tr><th>Biến</th><th>Mặc định</th><th>Ý nghĩa</th></tr>
+  <tr><td>SPRING_DATASOURCE_URL</td><td>jdbc:postgresql://localhost:5432/price_sync</td><td>Chuỗi kết nối Postgres</td></tr>
+  <tr><td>SPRING_DATASOURCE_USERNAME</td><td>macbookpro</td><td>User Postgres (đổi theo máy bạn — xem §6.1)</td></tr>
+  <tr><td>SPRING_DATASOURCE_PASSWORD</td><td>(rỗng)</td><td>Mật khẩu Postgres</td></tr>
+  <tr><td>MAIL_HOST / MAIL_PORT</td><td>127.0.0.1 / 1025</td><td>SMTP gửi alert khi batch FAILED (mặc định trỏ Mailpit)</td></tr>
+  <tr><td>MAIL_AUTH / MAIL_STARTTLS</td><td>false / false</td><td>Bật khi dùng SMTP thật (vd Gmail)</td></tr>
+  <tr><td>MAIL_USERNAME / MAIL_PASSWORD</td><td>(rỗng)</td><td>Thông tin đăng nhập SMTP thật</td></tr>
+</table>
+
+<div class="callout danger"><b>Tuyệt đối không commit secret.</b> Nếu tạo file <code>run.sh</code> để chạy nhanh, nó đã được gitignore sẵn — <b>đừng</b> gỡ gitignore. Với SMTP Gmail, dùng <b>App Password 16 ký tự</b> (không dùng mật khẩu tài khoản), và đặt qua biến môi trường chứ không viết cứng vào file theo dõi.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s5">
+<h2>5. Cách A — Chạy toàn bộ bằng Docker Compose <span class="tag tag-a">khuyến nghị</span></h2>
+<p>Một lệnh dựng cả <b>Postgres + app (đã kèm UI) + Mailpit</b>. Postgres trong container là <b>mới tinh</b> → Flyway chạy V1…V19 tạo schema và seed config/mapping sạch, không lẫn dữ liệu test cũ.</p>
+
+<h3>5.1. Dựng &amp; chạy</h3>
+<pre><code><span class="c"># tại thư mục gốc Price_Sync/</span>
+docker compose up --build</code></pre>
+<p>Lần đầu sẽ mất vài phút (build UI → đóng jar → tải image Postgres/Mailpit). Khi thấy log Spring Boot <code>Started PriceSyncApplication</code> là đã sẵn sàng. Secret HQ, datasource và MAIL_HOST đã được khai sẵn trong <code>docker-compose.yml</code> — không cần thao tác thêm.</p>
+
+<h3>5.2. Các địa chỉ truy cập</h3>
+<table>
+  <tr><th>Địa chỉ</th><th>Nội dung</th></tr>
+  <tr><td><a href="http://localhost:8080">http://localhost:8080</a></td><td>UI console + API (cùng một cổng)</td></tr>
+  <tr><td><a href="http://localhost:8080/api/v1/events">http://localhost:8080/api/v1/events</a></td><td>API danh sách batch (JSON)</td></tr>
+  <tr><td><a href="http://localhost:8025">http://localhost:8025</a></td><td>Mailpit — hộp thư web xem email alert khi batch FAILED</td></tr>
+</table>
+<div class="callout note"><b>Postgres cổng 5432 KHÔNG mở ra host</b> — cố ý, để không đụng Postgres local của bạn. Muốn xem DB trong container: <code>docker compose exec db psql -U price_sync -d price_sync</code>.</p></div>
+
+<h3>5.3. Xem file MNT sinh ra</h3>
+<p><code>docker-compose.yml</code> mount <code>./xcenter-inbound</code> (trên host) vào container, nên file MNT do app ghi ra <b>xuất hiện ngay trên máy bạn</b>:</p>
+<pre><code>ls -lt xcenter-inbound/
+cat xcenter-inbound/pricesync_*.mnt</code></pre>
+
+<h3>5.4. Dừng / dọn</h3>
+<pre><code>docker compose down            <span class="c"># dừng, GIỮ dữ liệu DB (volume pgdata)</span>
+docker compose down -v         <span class="c"># dừng và XOÁ sạch dữ liệu DB (chạy lại như mới)</span></code></pre>
+
+<div class="callout warn"><b>Gotcha đã biết khi POST qua Docker:</b> app trong container thấy IP nguồn là gateway của Docker Desktop (<code>192.168.65.1</code>), không phải <code>127.0.0.1</code> → bị chặn <b>403</b> bởi IP allowlist. Trước khi chạy smoke test end-to-end trên Docker, hãy thêm IP đó vào allowlist (xem §8.4 và §9.2). Các endpoint <b>đọc</b> (<code>/api/v1/events</code>, <code>/config</code>, …) không bị lọc nên vẫn gọi được ngay.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s6">
+<h2>6. Cách B — Chạy local để phát triển <span class="tag tag-b">dev</span></h2>
+<p>Backend và frontend chạy <b>2 tiến trình riêng</b>: Spring ở <code>:8080</code>, Vite dev server ở <code>:5173</code> (hot-reload). Vite proxy mọi request <code>/api</code> sang <code>:8080</code> nên trình duyệt không dính CORS.</p>
+
+<h3>6.1. Chuẩn bị PostgreSQL</h3>
+<p>Cần một database tên <code>price_sync</code> mà app kết nối được. Với Postgres cài bằng Homebrew trên macOS:</p>
+<pre><code><span class="c"># khởi động Postgres (nếu chưa chạy)</span>
+brew services start postgresql@16
+
+<span class="c"># tạo database — Homebrew tạo sẵn 1 role trùng tên đăng nhập máy bạn</span>
+createdb price_sync
+
+<span class="c"># kiểm tra kết nối được</span>
+psql -d price_sync -c "select 1;"</code></pre>
+
+<div class="callout danger"><b>Bắt buộc đọc — user DB mặc định là giá trị GHI CỨNG.</b> <code>application.properties</code> đặt <code>spring.datasource.username=macbookpro</code> (tên máy của tác giả), mật khẩu rỗng — <b>không</b> tự lấy theo tên máy bạn. Nếu login của bạn khác <code>macbookpro</code> mà để nguyên, app sẽ chết với <code>FATAL: role "macbookpro" does not exist</code>. Vì vậy <b>luôn override</b> <code>SPRING_DATASOURCE_USERNAME</code> sang role Postgres của bạn khi chạy (lệnh §6.2 dưới đây đã dùng <code>$(whoami)</code> để tự khớp — với Homebrew Postgres, role mặc định trùng tên đăng nhập máy bạn).</p></div>
+<p class="small">Không cần tạo bảng tay — <b>Flyway</b> sẽ tự tạo mọi bảng và seed dữ liệu (config, mapping_rule) ngay lần chạy đầu.</p>
+
+<h3>6.2. Chạy backend</h3>
+<p>Chạy từ thư mục <code>backend/</code>, kèm 2 secret bắt buộc. Mail để mặc định (trỏ 127.0.0.1:1025 — nếu không có SMTP nào ở đó, gửi alert sẽ chỉ log lỗi và <b>không</b> làm gãy pipeline):</p>
+<pre><code>cd backend
+HQ_API_KEY=hq-secret-key-123 \
+HQ_HMAC_SECRET=shared-secret-abc \
+SPRING_DATASOURCE_USERNAME=$(whoami) \
+./mvnw spring-boot:run</code></pre>
+<p><code>SPRING_DATASOURCE_USERNAME=$(whoami)</code> khớp với role Postgres mặc định của Homebrew (xem cảnh báo §6.1). Nếu role/mật khẩu của bạn khác, thay <code>$(whoami)</code> bằng role thật và thêm <code>SPRING_DATASOURCE_PASSWORD=&lt;mật khẩu&gt;</code>. Thành công khi thấy <code>Tomcat started on port 8080</code> và <code>Started PriceSyncApplication</code>. Lúc này API đã sống ở <a href="http://localhost:8080">http://localhost:8080</a> (nhưng chưa có UI — UI chạy ở tiến trình Vite bên dưới).</p>
+
+<h3>6.3. Chạy frontend (tiến trình thứ 2, terminal khác)</h3>
+<pre><code>cd frontend
+npm install        <span class="c"># chỉ lần đầu (hoặc khi đổi dependency)</span>
+npm run dev        <span class="c"># mở http://localhost:5173</span></code></pre>
+<p>Mở <a href="http://localhost:5173">http://localhost:5173</a>. Mọi lời gọi <code>/api/...</code> từ UI được Vite proxy sang backend <code>:8080</code>.</p>
+
+<div class="callout ok"><b>Tóm tắt Cách B:</b> Postgres chạy → <code>backend/</code>: <code>./mvnw spring-boot:run</code> (kèm 2 env) → <code>frontend/</code>: <code>npm run dev</code> → dùng UI ở <b>:5173</b>. Sửa code React nóng ngay; sửa code Java cần khởi động lại backend.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s7">
+<h2>7. Đóng gói bản production (1 cổng duy nhất)</h2>
+<p>Ở production không chạy Vite. UI được build ra file tĩnh và nhét vào Spring; jar tự phục vụ cả UI lẫn API trên <b>cổng 8080</b>. Deep-link (vd <code>/dashboard</code>, <code>/events/12</code>) và refresh không bị 404 nhờ <code>SpaController</code> forward về <code>index.html</code>.</p>
+
+<h3>7.1. Build thủ công (không Docker)</h3>
+<pre><code><span class="c"># 1) build UI → đổ vào backend/src/main/resources/static/ (đã cấu hình trong vite.config.ts)</span>
+cd frontend
+npm install
+npm run build
+
+<span class="c"># 2) đóng jar (UI đã nằm trong static/ nên jar tự chứa UI)</span>
+cd ../backend
+./mvnw clean package -DskipTests
+
+<span class="c"># 3) chạy jar (SPRING_DATASOURCE_USERNAME: xem cảnh báo §6.1)</span>
+HQ_API_KEY=hq-secret-key-123 \
+HQ_HMAC_SECRET=shared-secret-abc \
+SPRING_DATASOURCE_USERNAME=$(whoami) \
+java -jar target/price_sync-0.0.1-SNAPSHOT.jar</code></pre>
+<p>Mở <a href="http://localhost:8080">http://localhost:8080</a> — giờ có cả UI lẫn API cùng cổng.</p>
+<p class="small">Bỏ <code>-DskipTests</code> nếu muốn chạy test khi đóng gói — nhưng test cần Postgres và biến môi trường, nên thường tách sang CI.</p>
+
+<h3>7.2. Build bằng Docker (khuyến nghị cho production)</h3>
+<p><code>Dockerfile</code> đã gộp cả 3 bước trên vào một image nhiều tầng (node → maven → JRE). Chỉ cần <code>docker compose up --build</code> như §5 — không phải build tay.</p>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s8">
+<h2>8. Kiểm tra sau cài đặt (Smoke test)</h2>
+
+<h3>8.1. Mở giao diện</h3>
+<p>Docker/production → <a href="http://localhost:8080">http://localhost:8080</a>; local dev → <a href="http://localhost:5173">http://localhost:5173</a>. Thấy trang Dashboard/Events là UI đã sống.</p>
+
+<h3>8.2. Gọi các API đọc (không cần xác thực)</h3>
+<p>Những endpoint này <b>không</b> bị lọc bảo mật (chỉ <code>/api/v1/price-events</code> mới bị), rất tiện để kiểm tra nhanh app + DB:</p>
+<pre><code>curl http://localhost:8080/api/v1/events           <span class="c"># danh sách batch (JSON, có thể là [])</span>
+curl http://localhost:8080/api/v1/events/metrics   <span class="c"># đếm batch theo trạng thái</span>
+curl http://localhost:8080/api/v1/config            <span class="c"># các dòng config đã seed</span>
+curl http://localhost:8080/api/v1/mappings          <span class="c"># các luật mapping đã seed</span></code></pre>
+<p><code>/config</code> phải trả về các key như <code>abort_threshold</code>, <code>ip_allowlist</code>, <code>xcenter_inbound_path</code>… → chứng tỏ Flyway đã seed thành công.</p>
+
+<h3>8.3. Gửi thử một batch có ký HMAC (end-to-end)</h3>
+<p>Endpoint intake yêu cầu 4 lớp: IP allowlist, HMAC-SHA256, API key, và cửa sổ thời gian (chống replay). Chữ ký = <code>HMAC-SHA256(secret, X-Timestamp + body)</code> ở dạng hex. Script bash dưới đây tự ký bằng <code>openssl</code>:</p>
+<pre><code>API_KEY="hq-secret-key-123"
+HMAC_SECRET="shared-secret-abc"
+TS=$(date +%s)                          <span class="c"># epoch giây, phải trong ±300s</span>
+BATCH_ID="smoke-$TS"
+
+<span class="c"># body 1 dòng — PHẢI khớp từng byte giữa lúc ký và lúc gửi</span>
+BODY="{\"batch_id\":\"$BATCH_ID\",\"version\":1,\"generated_at\":\"2026-07-23T09:00:00+07:00\",\"records\":[{\"change_id\":\"$BATCH_ID-r1\",\"version\":1,\"item_id\":\"SKU1\",\"store_id_or_zone\":\"STORE_001\",\"price\":50000,\"currency\":\"VND\",\"effective_start\":\"2026-07-24\",\"effective_end\":null,\"change_type\":\"new\"}]}"
+
+<span class="c"># ký ts+body; awk lấy trường cuối = chuỗi hex (bền với mọi kiểu output openssl)</span>
+SIG=$(printf '%s' "$TS$BODY" | openssl dgst -sha256 -hmac "$HMAC_SECRET" | awk '{print $NF}')
+
+curl -i -X POST http://localhost:8080/api/v1/price-events \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: $API_KEY" \
+  -H "X-Timestamp: $TS" \
+  -H "X-Signature: $SIG" \
+  --data "$BODY"</code></pre>
+<p><b>Kỳ vọng:</b> <code>HTTP/1.1 202</code> kèm JSON xác nhận. Sau tối đa ~10 giây (worker poll mỗi 10s), batch được xử lý và một file MNT xuất hiện trong thư mục Xcenter inbound:</p>
+<pre><code><span class="c"># Docker / chạy jar ở gốc: file ở ./xcenter-inbound/</span>
+<span class="c"># chạy ./mvnw ở backend/: file ở backend/xcenter-inbound/</span>
+ls -lt xcenter-inbound/ 2>/dev/null || ls -lt backend/xcenter-inbound/
+<span class="c"># nội dung: FHEAD,2026-07-23 / FDETL,SKU1,S,001,50000,VND,2026-07-24, / FTAIL,1</span></code></pre>
+
+<h3>8.4. Nếu chạy trên Docker → thêm IP trước</h3>
+<p>Trên Docker, POST từ host bị <b>403</b> do IP <code>192.168.65.1</code> chưa có trong allowlist. Chạy lệnh này một lần (áp dụng tức thì, không cần khởi động lại), rồi lặp lại §8.3:</p>
+<pre><code>curl -X PUT http://localhost:8080/api/v1/config/ip_allowlist \
+  -H "Content-Type: application/json" \
+  -d '{"config_value":"127.0.0.1,0:0:0:0:0:0:0:1,192.168.65.1"}'</code></pre>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s9">
+<h2>9. Cấu hình sau cài đặt (không cần redeploy)</h2>
+<p>Điểm mạnh của hệ thống: hầu hết cấu hình nghiệp vụ nằm trong bảng <code>config</code> và <code>mapping_rule</code> của DB, sửa qua UI (trang <b>Config</b>) hoặc API, <b>đọc lại theo từng request</b> nên có hiệu lực ngay, không cần build/khởi động lại.</p>
+
+<h3>9.1. Các key config đã seed</h3>
+<table>
+  <tr><th>config_key</th><th>Giá trị seed</th><th>Ý nghĩa</th></tr>
+  <tr><td>abort_threshold</td><td>0.2</td><td>Tỉ lệ record bị loại &gt; ngưỡng này → huỷ cả batch (FAILED)</td></tr>
+  <tr><td>ip_allowlist</td><td>127.0.0.1,0:0:0:0:0:0:0:1</td><td>Danh sách IP được phép POST intake</td></tr>
+  <tr><td>replay_skew_min</td><td>5</td><td>Cửa sổ chống replay (phút) cho X-Timestamp</td></tr>
+  <tr><td>xcenter_inbound_path</td><td>xcenter-inbound</td><td>Thư mục ghi file MNT</td></tr>
+  <tr><td>filename_pattern</td><td>pricesync_&lt;batch_id&gt;_v&lt;version&gt;_&lt;ts&gt;.mnt</td><td>Mẫu tên file (phải chứa <code>&lt;ts&gt;</code> và kết thúc <code>.mnt</code>)</td></tr>
+</table>
+
+<h3>9.2. Sửa config qua API</h3>
+<pre><code>curl http://localhost:8080/api/v1/config                       <span class="c"># xem tất cả</span>
+curl -X PUT http://localhost:8080/api/v1/config/abort_threshold \
+  -H "Content-Type: application/json" -d '{"config_value":"0.5"}'</code></pre>
+
+<h3>9.3. Mapping động (đăng ký field mới, không sửa code)</h3>
+<p>Bảng <code>mapping_rule</code> quy định cột nào của file MNT lấy từ field JSON nào. Thêm một dòng qua trang <b>Mapping</b> (hoặc <code>POST /api/v1/mappings</code>) là hệ thống hiểu và xuất field mới ra cột MNT ngay — không redeploy. Các cột chuẩn (hợp đồng Oracle) được đánh dấu <code>locked</code> để không bị đổi/xoá nhầm.</p>
+<div class="callout note"><b>Lưu ý nghiệp vụ:</b> cột MNT là <b>hợp đồng vị trí</b> với DataLoader/Xstore. Thêm cột mới chỉ có ý nghĩa khi phía tiêu thụ (Xstore) đã mong đợi cột đó.</p></div>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s10">
+<h2>10. Xử lý sự cố thường gặp</h2>
+<table>
+  <tr><th>Triệu chứng</th><th>Nguyên nhân &amp; cách xử lý</th></tr>
+  <tr>
+    <td><code>Could not resolve placeholder 'HQ_API_KEY'</code> (app chết khi khởi động)</td>
+    <td>Thiếu biến môi trường bắt buộc. Chạy kèm <code>HQ_API_KEY=… HQ_HMAC_SECRET=…</code> (fail-fast là chủ ý — xem §4).</td>
+  </tr>
+  <tr>
+    <td>POST trả <b>403</b> Forbidden</td>
+    <td>IP nguồn không nằm trong <code>ip_allowlist</code>. Trên Docker thêm <code>192.168.65.1</code> (§8.4). Xem log <code>WARN</code> in ra IP bị chặn để biết cần thêm IP nào.</td>
+  </tr>
+  <tr>
+    <td>POST trả <b>401</b> Unauthorized</td>
+    <td>Sai/thiếu <code>X-Api-Key</code>, sai chữ ký HMAC (body lúc ký ≠ lúc gửi), hoặc <code>X-Timestamp</code> lệch quá cửa sổ (mặc định ±5 phút). Đảm bảo ký đúng <code>ts+body</code> và đồng hồ máy chuẩn.</td>
+  </tr>
+  <tr>
+    <td><code>Connection refused</code> / <code>FATAL: database "price_sync" does not exist</code></td>
+    <td>Postgres chưa chạy hoặc chưa tạo DB / sai user. Xem §6.1: <code>brew services start postgresql@16</code> + <code>createdb price_sync</code>, hoặc override <code>SPRING_DATASOURCE_*</code>.</td>
+  </tr>
+  <tr>
+    <td>Flyway <b>checksum mismatch</b> trên DB local cũ</td>
+    <td>Một migration đã áp dụng bị sửa nội dung. Cách chắc chắn trên DB dev là reset sạch để Flyway chạy lại từ đầu: <code>dropdb price_sync &amp;&amp; createdb price_sync</code> (cũng xoá dữ liệu test cũ). DB trong Docker luôn mới nên không dính. <span class="small">(Project chưa cài flyway-maven-plugin nên không có lệnh <code>flyway:repair</code>.)</span></td>
+  </tr>
+  <tr>
+    <td>Cổng bận: <code>Port 8080/5173/5432 already in use</code></td>
+    <td>Có tiến trình khác chiếm cổng. Tắt nó (<code>lsof -i :8080</code> → <code>kill</code>) hoặc đổi cổng (Spring: <code>server.port</code>; Vite: <code>--port</code>; sửa mapping cổng trong compose).</td>
+  </tr>
+  <tr>
+    <td>Sửa code Java nhưng "không thấy đổi"</td>
+    <td>JVM đang chạy bản cũ. Sửa <code>.java</code> phải <b>khởi động lại backend</b>. Chỉ config trong DB mới có hiệu lực không cần restart.</td>
+  </tr>
+  <tr>
+    <td>Không nhận được email alert khi batch FAILED</td>
+    <td>Bình thường nếu chưa có SMTP ở <code>MAIL_HOST</code> — gửi mail là "best-effort", lỗi chỉ log. Muốn xem: dùng Mailpit (Docker, §5) tại <a href="http://localhost:8025">:8025</a>, hoặc đặt <code>MAIL_*</code> trỏ SMTP thật.</td>
+  </tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<div class="section pb" id="s11">
+<h2>11. Phụ lục</h2>
+
+<h3>11.1. Cổng dùng đến</h3>
+<table>
+  <tr><th>Cổng</th><th>Dịch vụ</th><th>Khi nào</th></tr>
+  <tr><td>8080</td><td>Spring Boot (API + UI production)</td><td>mọi chế độ</td></tr>
+  <tr><td>5173</td><td>Vite dev server (UI hot-reload)</td><td>chỉ local dev</td></tr>
+  <tr><td>5432</td><td>PostgreSQL</td><td>local dev (Docker không mở ra host)</td></tr>
+  <tr><td>8025</td><td>Mailpit — hộp thư web</td><td>chỉ Docker</td></tr>
+  <tr><td>1025</td><td>Mailpit — SMTP nội bộ</td><td>chỉ Docker</td></tr>
+</table>
+
+<h3>11.2. Endpoint chính</h3>
+<table>
+  <tr><th>Method &amp; path</th><th>Bảo mật</th><th>Mô tả</th></tr>
+  <tr><td>POST /api/v1/price-events</td><td>4 lớp (IP+HMAC+key+ts)</td><td>HQ gửi lô giá → 202</td></tr>
+  <tr><td>POST /api/v1/events/{id}/retry</td><td>không</td><td>Operator re-drive batch FAILED</td></tr>
+  <tr><td>GET /api/v1/events</td><td>không</td><td>Danh sách batch</td></tr>
+  <tr><td>GET /api/v1/events/{id}</td><td>không</td><td>Chi tiết batch + records</td></tr>
+  <tr><td>GET /api/v1/events/{id}/logs</td><td>không</td><td>Timeline vòng đời batch</td></tr>
+  <tr><td>GET /api/v1/events/metrics</td><td>không</td><td>Đếm batch theo trạng thái</td></tr>
+  <tr><td>GET·PUT /api/v1/config[/{key}]</td><td>không</td><td>Đọc/sửa config trong DB</td></tr>
+  <tr><td>GET·POST·DELETE /api/v1/mappings</td><td>không</td><td>Quản lý luật mapping</td></tr>
+</table>
+
+<h3>11.3. Migration schema (Flyway tự chạy)</h3>
+<p class="small">Toàn bộ nằm ở <code>backend/src/main/resources/db/migration/</code>, chạy theo thứ tự V1 → V19 khi app khởi động. Không cần chạy tay.</p>
+<table>
+  <tr><th>Migration</th><th>Nội dung chính</th></tr>
+  <tr><td>V1–V2</td><td>Bảng <code>price_batch</code>, <code>price_record</code> (+ unique constraint idempotency)</td></tr>
+  <tr><td>V3–V5</td><td>Cột lease (claim/reaper), validation record, retry/backoff</td></tr>
+  <tr><td>V6</td><td>Bảng <code>batch_log</code> (audit vòng đời)</td></tr>
+  <tr><td>V7–V13</td><td>Bảng <code>config</code> + seed connection/threshold; cột <code>extras</code> (JSONB)</td></tr>
+  <tr><td>V14–V16, V19</td><td>Bảng <code>mapping_rule</code> + seed cột chuẩn + validate động + cờ <code>locked</code></td></tr>
+  <tr><td>V18</td><td>Cột <code>output_file</code> trên <code>price_batch</code></td></tr>
+</table>
+
+<h3>11.4. Lệnh hay dùng</h3>
+<table class="kv">
+  <tr><td>docker compose up --build</td><td>Dựng &amp; chạy toàn hệ thống (Cách A)</td></tr>
+  <tr><td>./mvnw spring-boot:run</td><td>Chạy backend (trong <code>backend/</code>, kèm env)</td></tr>
+  <tr><td>./mvnw test</td><td>Chạy toàn bộ test</td></tr>
+  <tr><td>./mvnw clean package -DskipTests</td><td>Đóng jar production</td></tr>
+  <tr><td>npm run dev</td><td>Chạy UI hot-reload (trong <code>frontend/</code>)</td></tr>
+  <tr><td>npm run build</td><td>Build UI vào static/ của Spring</td></tr>
+</table>
+</div>
+
+<footer>
+  Price Sync — Hướng dẫn cài đặt · Tài liệu v1.0 · 23/07/2026 · Sinh tự động từ mã nguồn repo XuanSang2005/Price_Sync.
+  Không chứa secret thật; mọi giá trị API key / HMAC / mật khẩu là placeholder cho dev — thay bằng giá trị an toàn ở production.
+</footer>
+
+</body>
+</html>

@@ -13,13 +13,6 @@ function ruleTagCls(t: string) {
   return m[t] ?? 'text-muted bg-surface2'
 }
 
-// Đoán data_type từ một giá trị mẫu THẬT (parse test): ngày ISO → DATE, số → NUMBER, còn lại → STRING.
-function inferType(v: string): string {
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) return 'DATE'
-  if (v.trim() !== '' && !isNaN(Number(v))) return 'NUMBER'
-  return 'STRING'
-}
-
 // Một cột MNT đang chỉnh (bản nháp cục bộ, chỉ ghi DB khi bấm Save)
 type Col = {
   key: string
@@ -27,7 +20,6 @@ type Col = {
   mnt_column: string
   rule_type: string
   rule_value: string | null
-  data_type: string | null
   required: boolean
   locked: boolean // cột chuẩn (hợp đồng Oracle) — khoá cứng: không đổi nguồn, không xoá. Gắn lúc load, KHÔNG suy từ json_field.
 }
@@ -37,7 +29,7 @@ let KEY = 1
 function colFromRule(r: MappingRule): Col {
   return {
     key: 'r' + r.id, json_field: r.json_field, mnt_column: r.mnt_column, rule_type: r.rule_type,
-    rule_value: r.rule_value, data_type: r.data_type, required: r.required, locked: r.locked,
+    rule_value: r.rule_value, required: r.required, locked: r.locked,
   }
 }
 
@@ -92,7 +84,7 @@ function MappingPage() {
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState('')
   const [adding, setAdding] = useState(false)
-  const [newCol, setNewCol] = useState({ json_field: '', mnt_column: '', data_type: '', required: false, nameEdited: false, typeEdited: false })
+  const [newCol, setNewCol] = useState({ json_field: '', mnt_column: '', required: false, nameEdited: false })
   const [addingSrc, setAddingSrc] = useState(false)
   const [newSrc, setNewSrc] = useState('')
   const [customSources, setCustomSources] = useState<string[]>([])
@@ -128,7 +120,6 @@ function MappingPage() {
 
   // ===== Danh sách ĐỘNG từ backend meta (không hardcode) =====
   const ruleTypes = meta?.rule_types ?? []
-  const dataTypes = meta?.data_types ?? []
   const recordTypes = meta?.record_types ?? []
 
   // Nguồn: source_fields động (reflection + extras) + field thấy trong preview thật
@@ -174,24 +165,12 @@ function MappingPage() {
     setCols((cs) => cs.map((c) => (c.key === colKey ? { ...c, ...patch } : c)))
     setDirty(true)
   }
-  // Tìm giá trị mẫu THẬT của một json_field trong batch preview (để đoán data_type).
-  function sampleValueOf(field: string): string | undefined {
-    const f = field.trim()
-    if (!f) return undefined
-    for (const r of preview?.rows ?? []) {
-      const val = r.before?.[f] ?? r.fields?.[f]
-      if (val != null && val !== '') return val
-    }
-    return undefined
-  }
-  // Gõ JSON field → tự sinh tên MNT (UPPERCASE) + data_type (từ giá trị mẫu). Ngừng sync khi user tự sửa.
+  // Gõ JSON field → tự sinh tên MNT (UPPERCASE). Ngừng sync khi user tự sửa tên MNT.
   function onJsonFieldChange(v: string) {
-    const sv = sampleValueOf(v)
     setNewCol((n) => ({
       ...n,
       json_field: v,
       mnt_column: n.nameEdited ? n.mnt_column : v.trim().toUpperCase().replace(/\s+/g, '_'),
-      data_type: n.typeEdited ? n.data_type : (sv === undefined ? '' : inferType(sv)),
     }))
   }
   function addColumn() {
@@ -201,9 +180,9 @@ function MappingPage() {
     if (cols.some((c) => c.mnt_column === mnt)) { showToast('Column ' + mnt + ' already exists'); return }
     setCols((cs) => [...cs, {
       key: 'c' + (KEY++), json_field: jf, mnt_column: mnt,
-      rule_type: 'DIRECT', rule_value: null, data_type: newCol.data_type || null, required: newCol.required, locked: false,
+      rule_type: 'DIRECT', rule_value: null, required: newCol.required, locked: false,
     }])
-    setNewCol({ json_field: '', mnt_column: '', data_type: '', required: false, nameEdited: false, typeEdited: false })
+    setNewCol({ json_field: '', mnt_column: '', required: false, nameEdited: false })
     setAdding(false)
     setDirty(true)
   }
@@ -225,7 +204,7 @@ function MappingPage() {
     if (unmapped) { showToast('Map every column to a source field first'); return }
     const body = cols.map((c, i) => ({
       record_type: recordType, position: i + 1, json_field: c.json_field, mnt_column: c.mnt_column,
-      rule_type: c.rule_type, rule_value: c.rule_value?.trim() || null, data_type: c.data_type || null, required: c.required,
+      rule_type: c.rule_type, rule_value: c.rule_value?.trim() || null, required: c.required,
     }))
     fetch(`/api/v1/mappings/${recordType}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -463,11 +442,6 @@ function MappingPage() {
                             placeholder={c.rule_type === 'VALUE_MAP' ? '{"STORE":"S"}' : 'VND'}
                             className="font-mono text-[11px] px-2 py-1 border border-border rounded bg-surface text-fg outline-none focus:border-accent flex-1 min-w-[120px]" />
                         )}
-                        <select value={c.data_type ?? ''} onClick={(e) => e.stopPropagation()} onChange={(e) => setColField(c.key, { data_type: e.target.value || null })}
-                          title="Shape check on validate" className="font-mono text-[11px] px-2 py-1 border border-border rounded bg-surface text-muted outline-none focus:border-accent">
-                          <option value="">no check</option>
-                          {dataTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-                        </select>
                         <label onClick={(e) => e.stopPropagation()} title="required" className="flex items-center gap-1 text-[11px] text-muted cursor-pointer select-none">
                           <input type="checkbox" checked={c.required} onChange={(e) => setColField(c.key, { required: e.target.checked })} /> required
                         </label>
@@ -485,20 +459,10 @@ function MappingPage() {
                       onKeyDown={(e) => { if (e.key === 'Enter') addColumn() }}
                       className="font-mono text-[12px] px-2.5 py-1.5 border border-border rounded bg-surface text-fg outline-none focus:border-accent" />
                   </div>
-                  <div className="flex gap-2 flex-wrap">
-                    <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-                      <label className="text-[10px] uppercase tracking-wide text-muted font-semibold">MNT column <span className="text-faint normal-case font-normal">· auto</span></label>
-                      <input value={newCol.mnt_column} onChange={(e) => setNewCol((n) => ({ ...n, mnt_column: e.target.value, nameEdited: e.target.value.trim() !== '' }))} placeholder="PROMO_CODE"
-                        className="font-mono text-[12px] px-2.5 py-1.5 border border-border rounded bg-surface text-fg outline-none focus:border-accent" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase tracking-wide text-muted font-semibold">data_type <span className="text-faint normal-case font-normal">· auto</span></label>
-                      <select value={newCol.data_type} onChange={(e) => setNewCol((n) => ({ ...n, data_type: e.target.value, typeEdited: true }))}
-                        title="Inferred from sample value - editable" className="font-mono text-[12px] px-2 py-1.5 border border-border rounded bg-surface text-fg outline-none">
-                        <option value="">no check</option>
-                        {dataTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] uppercase tracking-wide text-muted font-semibold">MNT column <span className="text-faint normal-case font-normal">· auto</span></label>
+                    <input value={newCol.mnt_column} onChange={(e) => setNewCol((n) => ({ ...n, mnt_column: e.target.value, nameEdited: e.target.value.trim() !== '' }))} placeholder="PROMO_CODE"
+                      className="font-mono text-[12px] px-2.5 py-1.5 border border-border rounded bg-surface text-fg outline-none focus:border-accent" />
                   </div>
                   <div className="flex gap-2 items-center flex-wrap">
                     <label className="flex items-center gap-1 text-[12px] text-muted cursor-pointer select-none">
@@ -506,7 +470,7 @@ function MappingPage() {
                     </label>
                     <span className="text-[10.5px] text-faint">rule = DIRECT (edit inline later)</span>
                     <div className="flex-1" />
-                    <button onClick={() => { setAdding(false); setNewCol({ json_field: '', mnt_column: '', data_type: '', required: false, nameEdited: false, typeEdited: false }) }}
+                    <button onClick={() => { setAdding(false); setNewCol({ json_field: '', mnt_column: '', required: false, nameEdited: false }) }}
                       className="text-[12px] text-muted px-2.5 py-1 cursor-pointer">Cancel</button>
                     <button onClick={addColumn} className="text-[12px] font-semibold text-accent-text bg-accent px-3 py-1 rounded-md cursor-pointer">Add</button>
                   </div>

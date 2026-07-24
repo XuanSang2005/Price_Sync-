@@ -1,6 +1,5 @@
 package price_sync.processing.mapper;
 
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -10,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
@@ -29,11 +27,6 @@ import price_sync.domain.record.PriceRecord;
 @Component
 public class Mapper {
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    // Field NỘI BỘ / metadata: KHÔNG được lộ ra làm nguồn map (tránh rò trạng thái persistence vào file MNT).
-    // Dùng CHUNG với MappingService.meta() để danh sách nguồn khớp đúng field mà buildFields phân giải được.
-    public static final Set<String> INTERNAL_FIELDS =
-            Set.of("id", "batch_id", "validation_status", "set_aside_reason", "extras");
 
     public Optional<MntRow> map(PriceRecord record, LocalDate businessDate, List<MappingRule> rules) {
         ChangeType changeType = ChangeType.valueOf(record.getChangeType().toUpperCase());
@@ -60,38 +53,25 @@ public class Mapper {
     }
 
     // Túi field: tên json_field (snake_case) → giá trị đã format sẵn theo kiểu MNT.
-    // DYNAMIC bằng REFLECTION: thay vì liệt kê tay từng getter, ta duyệt MỌI getter của entity
-    // rồi đổi tên getter → snake_case (getItemId → item_id) và tự đọc giá trị. Nhờ vậy THÊM một cột
-    // cố định vào PriceRecord là map được NGAY qua mapping_rule, không phải sửa Mapper.
+    // Field CỐ ĐỊNH: gọi getter TRỰC TIẾP (rõ ràng, compiler kiểm được, không reflection).
+    // Field ĐỘNG (extras JSONB): trải phẳng ở cuối — HQ khai thêm qua mapping_rule, không cần getter.
+    // Thêm một field cố định mới = thêm 1 dòng put ở đây (đằng nào cũng phải thêm cột DB + getter + DTO).
     public Map<String, String> buildFields(PriceRecord record, LocalDate businessDate) {
         Map<String, String> fields = new HashMap<>();
 
-        for (Method getter : PriceRecord.class.getMethods()) {
-            if (getter.getParameterCount() != 0) {
-                continue; // getter thật không có tham số
-            }
-            String name = getter.getName();
-            if (!name.startsWith("get") || name.equals("getClass")) {
-                continue; // getClass gây nhiễu
-            }
-            if (getter.getReturnType() == void.class) {
-                continue;
-            }
-            String field = toSnakeCase(name.substring(3));
-            if (INTERNAL_FIELDS.contains(field)) {
-                continue; // field nội bộ + extras (extras xử lý riêng kiểu Map bên dưới)
-            }
-            try {
-                fields.put(field, formatValue(getter.invoke(record)));
-            } catch (ReflectiveOperationException e) {
-                // getter lỗi thì bỏ qua field đó — không làm hỏng cả record
-            }
-        }
-
-        // Default nghiệp vụ ĐẶC THÙ (reflection không tổng quát hoá được): hiệu lực mặc định = ngày mai.
-        if (record.getEffectiveStart() == null) {
-            fields.put("effective_start", businessDate.plusDays(1).toString());
-        }
+        // formatValue lo: null → "", tiền (BigDecimal) → làm tròn scale 0, ngày (LocalDate) → ISO.
+        fields.put("item_id", formatValue(record.getItemId()));
+        fields.put("store_id_or_zone", formatValue(record.getStoreIdOrZone()));
+        fields.put("price", formatValue(record.getPrice()));
+        fields.put("currency", formatValue(record.getCurrency()));
+        fields.put("effective_end", formatValue(record.getEffectiveEnd()));
+        fields.put("change_type", formatValue(record.getChangeType()));
+        fields.put("change_id", formatValue(record.getChangeId()));
+        fields.put("version", formatValue(record.getVersion()));
+        // effective_start: HQ không gửi → mặc định = ngày mai (businessDate + 1)
+        fields.put("effective_start", record.getEffectiveStart() != null
+                ? formatValue(record.getEffectiveStart())
+                : businessDate.plusDays(1).toString());
 
         // Field ĐỘNG (JSONB extras) — do HQ khai thêm qua mapping_rule
         if (record.getExtras() != null) {
@@ -115,23 +95,6 @@ public class Mapper {
             return date.toString();
         }
         return String.valueOf(value);
-    }
-
-    // "ItemId" → "item_id", "StoreIdOrZone" → "store_id_or_zone" (chèn "_" trước mỗi chữ hoa, hạ chữ thường).
-    private String toSnakeCase(String camel) {
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < camel.length(); i++) {
-            char c = camel.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    out.append('_');
-                }
-                out.append(Character.toLowerCase(c));
-            } else {
-                out.append(c);
-            }
-        }
-        return out.toString();
     }
 
     // Áp một luật → giá trị một cột. Optional.empty() = không map được (đẩy cả record thành unmappable).

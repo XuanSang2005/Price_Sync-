@@ -1,6 +1,5 @@
 package price_sync.mapping;
 
-import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,8 +49,7 @@ public class MappingService {
         return mappingRuleRepository.findAll().stream()
                 .sorted(Comparator.comparing(MappingRule::getRecordType).thenComparingInt(MappingRule::getPosition))
                 .map(r -> new MappingResponse(r.getId(), r.getRecordType(), r.getPosition(), r.getJsonField(),
-                        r.getMntColumn(), r.getRuleType(), r.getRuleValue(), r.getDataType(), r.isRequired(),
-                        r.isLocked()))
+                        r.getMntColumn(), r.getRuleType(), r.getRuleValue(), r.isRequired(), r.isLocked()))
                 .toList();
     }
 
@@ -66,7 +64,7 @@ public class MappingService {
             throw new LockedMappingException(); // cột chuẩn đã có sẵn, khoá cứng — không tạo trùng
         }
         mappingRuleRepository.save(new MappingRule(req.recordType(), req.position(), req.jsonField(),
-                req.mntColumn(), req.ruleType(), req.ruleValue(), req.dataType(), req.required()));
+                req.mntColumn(), req.ruleType(), req.ruleValue(), req.required()));
     }
 
     @Transactional
@@ -99,7 +97,7 @@ public class MappingService {
             }
             pos++;
             mappingRuleRepository.save(new MappingRule(recordType, pos, req.jsonField(),
-                    req.mntColumn(), req.ruleType(), req.ruleValue(), req.dataType(), req.required()));
+                    req.mntColumn(), req.ruleType(), req.ruleValue(), req.required()));
         }
     }
 
@@ -152,53 +150,25 @@ public class MappingService {
         return new PreviewResponse(null, null, List.of());
     }
 
-    // Metadata cho UI: source_fields ĐỘNG (reflection getter PriceRecord + extras đã khai),
-    // record/rule/standard là hằng single-source ở backend (không để FE hardcode nữa).
+    // Field nguồn CỐ ĐỊNH — thứ tự TẤT ĐỊNH, khớp cột đích bên phải (thay reflection getMethods() vô định).
+    // Phải KHỚP đúng các field Mapper.buildFields dựng ra (9 field không phải nội bộ).
+    private static final List<String> FIXED_SOURCE_FIELDS = List.of(
+            "item_id", "store_id_or_zone", "price", "currency",
+            "effective_start", "effective_end", "change_type", "change_id", "version");
+
+    // Metadata cho UI: source_fields = field cố định (thứ tự trên) + field ĐỘNG đã khai trong sổ (promo_code…);
+    // record/rule/standard/data types là hằng single-source ở backend (không để FE hardcode).
     @Transactional
     public MappingMeta meta() {
-        // 1) Field nguồn cố định: duyệt getter của PriceRecord bằng reflection → snake_case
-        //    (bỏ các getter nội bộ không phải field nghiệp vụ).
-        Set<String> skip = Mapper.INTERNAL_FIELDS; // CHUNG với Mapper.buildFields → nguồn khớp field phân giải được
-        Set<String> fields = new LinkedHashSet<>();
-        for (Method g : PriceRecord.class.getMethods()) {
-            if (g.getParameterCount() != 0 || !g.getName().startsWith("get") || g.getName().equals("getClass")) {
-                continue;
-            }
-            if (g.getReturnType() == void.class) {
-                continue;
-            }
-            String name = toSnakeCase(g.getName().substring(3));
-            if (!skip.contains(name)) {
-                fields.add(name);
-            }
-        }
-        // 2) + field ĐỘNG đã khai trong sổ (extras như promo_code) mà chưa có ở trên
+        Set<String> fields = new LinkedHashSet<>(FIXED_SOURCE_FIELDS);
+        // Nối field ĐỘNG (extras như promo_code) khai trong sổ; LinkedHashSet giữ thứ tự + tự dedup.
         for (MappingRule r : mappingRuleRepository.findAll()) {
             fields.add(r.getJsonField());
         }
         return new MappingMeta(
                 new ArrayList<>(fields),
                 List.of("FDETL", "FDELE"), // loại record Mapper sinh ra (delete→FDELE, còn lại→FDETL)
-                List.of("DIRECT", "DEFAULT", "VALUE_MAP", "SPLIT"), // khớp Mapper.applyRule
-                List.of("STRING", "NUMBER", "DATE"), // kiểu kiểm shape field động (khớp Validator)
-                List.of("item_id", "store_id_or_zone", "price", "currency", "effective_start", "effective_end"));
-    }
-
-    // "ItemId" → "item_id" (giống Mapper).
-    private String toSnakeCase(String camel) {
-        StringBuilder out = new StringBuilder();
-        for (int i = 0; i < camel.length(); i++) {
-            char c = camel.charAt(i);
-            if (Character.isUpperCase(c)) {
-                if (i > 0) {
-                    out.append('_');
-                }
-                out.append(Character.toLowerCase(c));
-            } else {
-                out.append(c);
-            }
-        }
-        return out.toString();
+                List.of("DIRECT", "DEFAULT", "VALUE_MAP", "SPLIT")); // khớp Mapper.applyRule
     }
 
     // Field nguồn của một record (before) — theo thứ tự dễ đọc.

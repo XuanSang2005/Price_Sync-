@@ -32,9 +32,6 @@ public class MappingRule {
     @Column(name = "rule_value")
     private String ruleValue;
 
-    @Column(name = "data_type")
-    private String dataType; 
-
     @Column(nullable = false)
     private boolean required;
 
@@ -48,18 +45,17 @@ public class MappingRule {
 
     public MappingRule(String recordType, int position, String jsonField, String mntColumn, String ruleType,
             String ruleValue) {
-        this(recordType, position, jsonField, mntColumn, ruleType, ruleValue, null, false);
+        this(recordType, position, jsonField, mntColumn, ruleType, ruleValue, false);
     }
 
     public MappingRule(String recordType, int position, String jsonField, String mntColumn, String ruleType,
-            String ruleValue, String dataType, boolean required) {
+            String ruleValue, boolean required) {
         this.recordType = recordType;
         this.position = position;
         this.jsonField = jsonField;
         this.mntColumn = mntColumn;
         this.ruleType = ruleType;
         this.ruleValue = ruleValue;
-        this.dataType = dataType;
         this.required = required;
     }
 
@@ -89,10 +85,6 @@ public class MappingRule {
 
     public String getRuleValue() {
         return ruleValue;
-    }
-
-    public String getDataType() {
-        return dataType;
     }
 
     public boolean isRequired() {
